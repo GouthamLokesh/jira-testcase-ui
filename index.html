@@ -808,7 +808,16 @@ function setLoading(on) {
 async function generate() {
   const key = document.getElementById("jiraKey").value.trim();
 
+  // Always reset state immediately — prevent stale data from showing
   clearAlert();
+  globalData = null;
+  setActionBtns(false);
+  document.getElementById("result").innerHTML = `
+    <div class="empty-state">
+      <div class="empty-icon">🧪</div>
+      <div class="empty-title">No test cases yet</div>
+      <div class="empty-desc">Enter a Jira Issue Key above and click Generate to get started.</div>
+    </div>`;
 
   /* V1: Empty field */
   if (key === "") {
@@ -830,8 +839,6 @@ async function generate() {
   }
 
   setLoading(true);
-  globalData = null;
-  setActionBtns(false);
 
   /* Timeout: 30s */
   const controller = new AbortController();
