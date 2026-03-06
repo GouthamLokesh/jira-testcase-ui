@@ -8,73 +8,80 @@
 body{
 font-family: Arial, sans-serif;
 background:#0f172a;
-display:flex;
-justify-content:center;
-align-items:flex-start;
-min-height:100vh;
-margin:0;
-padding-top:40px;
 color:white;
+margin:0;
+padding:40px;
 }
 
 .container{
-background:#1e293b;
-padding:30px;
-border-radius:12px;
-width:700px;
-max-width:90%;
-box-shadow:0 8px 25px rgba(0,0,0,0.4);
+max-width:1000px;
+margin:auto;
 }
 
 h1{
 text-align:center;
+margin-bottom:30px;
+}
+
+.search-box{
+display:flex;
+gap:10px;
 margin-bottom:20px;
 }
 
 input{
-width:100%;
+flex:1;
 padding:12px;
 border-radius:6px;
 border:none;
-margin-bottom:15px;
 font-size:16px;
 }
 
 button{
-width:100%;
-padding:12px;
+padding:12px 20px;
 background:#38bdf8;
 border:none;
 border-radius:6px;
 cursor:pointer;
 font-weight:bold;
-font-size:16px;
 }
 
 button:hover{
 background:#0ea5e9;
 }
 
-#loading{
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
+background:#1e293b;
+}
+
+th,td{
+padding:12px;
+border-bottom:1px solid #334155;
+text-align:left;
+}
+
+th{
+background:#020617;
+}
+
+.steps{
+margin-top:10px;
+background:#020617;
+padding:10px;
+border-radius:6px;
+display:none;
+}
+
+.export{
+margin-top:20px;
+}
+
+.loading{
 margin-top:15px;
-text-align:center;
 font-style:italic;
-}
-
-.section{
-margin-top:30px;
-}
-
-.testcase{
-background:#0f172a;
-padding:15px;
-margin-top:15px;
-border-radius:8px;
-border-left:4px solid #38bdf8;
-}
-
-.testcase ul{
-margin-top:5px;
 }
 
 </style>
@@ -86,11 +93,17 @@ margin-top:5px;
 
 <h1>AI Jira Test Case Generator</h1>
 
-<input id="jiraKey" placeholder="Enter Jira Issue Key (Example: QA-1)" />
+<div class="search-box">
+<input id="jiraKey" placeholder="Enter Jira Issue Key (Example: QA-1)">
+<button onclick="generate()">Generate</button>
+</div>
 
-<button onclick="generate()">Generate Test Cases</button>
+<div class="loading" id="loading"></div>
 
-<div id="loading"></div>
+<div class="export">
+<button onclick="exportCSV()">Export to Excel</button>
+<button onclick="copyAll()">Copy Test Cases</button>
+</div>
 
 <div id="result"></div>
 
@@ -98,11 +111,13 @@ margin-top:5px;
 
 <script>
 
+let globalData=null
+
 async function generate(){
 
 const key=document.getElementById("jiraKey").value
-const result=document.getElementById("result")
 const loading=document.getElementById("loading")
+const result=document.getElementById("result")
 
 result.innerHTML=""
 loading.innerHTML="Generating test cases..."
@@ -117,82 +132,130 @@ headers:{
 "Content-Type":"application/json",
 "x-path-api":"Goutham@12"
 },
-body:JSON.stringify({
-issueKey:key
+body:JSON.stringify({issueKey:key})
 })
-}
-)
 
 const data=await response.json()
 
+globalData=data
+
 loading.innerHTML=""
+
+renderTable(data)
+
+}catch(e){
+
+loading.innerHTML=""
+result.innerHTML="<p style='color:red'>Error loading test cases</p>"
+
+}
+
+}
+
+function renderTable(data){
 
 let html=""
 
-html+=`<div class="section">
-<h2>Positive Test Cases</h2>
-`
+html+=`<h2>Positive Test Cases</h2>`
 
-data.positive_tests.forEach(tc=>{
+html+=tableHTML(data.positive_tests)
 
-html+=`
-<div class="testcase">
+html+=`<h2 style="margin-top:40px">Negative Test Cases</h2>`
 
-<b>${tc.test_case_id}</b><br><br>
+html+=tableHTML(data.negative_tests)
 
-<b>Preconditions</b><br>
-${tc.preconditions}<br><br>
-
-<b>Steps</b>
-<ul>
-${tc.steps.map(s=>`<li>${s}</li>`).join("")}
-</ul>
-
-<b>Expected Result</b><br>
-${tc.expected_result}
-
-</div>
-`
-})
-
-html+=`</div>`
-
-html+=`<div class="section">
-<h2>Negative Test Cases</h2>
-`
-
-data.negative_tests.forEach(tc=>{
-
-html+=`
-<div class="testcase">
-
-<b>${tc.test_case_id}</b><br><br>
-
-<b>Preconditions</b><br>
-${tc.preconditions}<br><br>
-
-<b>Steps</b>
-<ul>
-${tc.steps.map(s=>`<li>${s}</li>`).join("")}
-</ul>
-
-<b>Expected Result</b><br>
-${tc.expected_result}
-
-</div>
-`
-})
-
-html+=`</div>`
-
-result.innerHTML=html
-
-}catch(err){
-
-loading.innerHTML=""
-result.innerHTML="<p style='color:red'>Error: "+err.message+"</p>"
+document.getElementById("result").innerHTML=html
 
 }
+
+function tableHTML(tests){
+
+let rows=""
+
+tests.forEach((tc,i)=>{
+
+rows+=`
+
+<tr>
+<td>${tc.test_case_id}</td>
+<td>${tc.preconditions}</td>
+<td>
+<button onclick="toggleSteps('steps${i}')">View Steps</button>
+<div class="steps" id="steps${i}">
+<ul>
+${tc.steps.map(s=>`<li>${s}</li>`).join("")}
+</ul>
+<b>Expected:</b> ${tc.expected_result}
+</div>
+</td>
+</tr>
+
+`
+
+})
+
+return`
+
+<table>
+
+<tr>
+<th>Test Case ID</th>
+<th>Preconditions</th>
+<th>Steps</th>
+</tr>
+
+${rows}
+
+</table>
+
+`
+
+}
+
+function toggleSteps(id){
+
+const el=document.getElementById(id)
+
+if(el.style.display==="block"){
+el.style.display="none"
+}else{
+el.style.display="block"
+}
+
+}
+
+function copyAll(){
+
+navigator.clipboard.writeText(JSON.stringify(globalData,null,2))
+
+alert("Copied test cases")
+
+}
+
+function exportCSV(){
+
+if(!globalData) return
+
+let csv="TestCaseID,Preconditions,Steps,Expected Result\n"
+
+function addRows(arr){
+
+arr.forEach(tc=>{
+csv+=`${tc.test_case_id},"${tc.preconditions}","${tc.steps.join(" | ")}","${tc.expected_result}"\n`
+})
+
+}
+
+addRows(globalData.positive_tests)
+addRows(globalData.negative_tests)
+
+const blob=new Blob([csv])
+const url=window.URL.createObjectURL(blob)
+
+const a=document.createElement("a")
+a.href=url
+a.download="testcases.csv"
+a.click()
 
 }
 
