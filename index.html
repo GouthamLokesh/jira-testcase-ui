@@ -831,8 +831,8 @@ async function generate() {
   const jiraPattern = /^[A-Z]+-\d+$/;
   if (!jiraPattern.test(key)) {
     showAlert(
-      "Invalid Key Format",
-      `"${key}" is not a valid Jira key. Keys must be uppercase letters, a hyphen, then one or more digits — for example: QA-1, PROJ-42.`
+      "Invalid Jira Key Format",
+      `"${key}" is not a valid format. Jira keys follow the pattern PROJECT-NUMBER using uppercase letters only — for example: QA-1, PROJ-42, or MYAPP-100. Check for typos, lowercase letters, or missing hyphens.`
     );
     document.getElementById("jiraKey").classList.add("input-error");
     return;
@@ -862,7 +862,10 @@ async function generate() {
 
     /* V3: HTTP error */
     if (response.status === 404) {
-      showAlert("Issue Not Found", `No Jira issue found for key "${key}". Double-check the key and try again.`);
+      showAlert(
+        "Jira Issue Not Found",
+        `"${key}" does not exist in Jira. Check that the project prefix is correct (e.g. QA, PROJ) and that the issue number exists. If the issue was recently deleted or you don't have access, contact your Jira admin.`
+      );
       setLoading(false);
       return;
     }
@@ -896,60 +899,70 @@ async function generate() {
 
     /* V4: Empty response */
     if (!data) {
-      showAlert("Empty Response", "No data was returned for this issue.");
+      showAlert("Empty Response", "No data was returned. Please try again.");
       setLoading(false);
       return;
     }
+
+    // Log raw response to console so we can inspect webhook output during debugging
+    console.log("[Jira Generator] Raw response:", JSON.stringify(data));
 
     // n8n sometimes wraps the response in a single-element array — unwrap it
     if (Array.isArray(data)) {
       data = data[0] || {};
     }
 
-    /* V5: Webhook returned HTTP 200 but with an error body.
-       n8n returns 200 + { message/error/errorMessage } for invalid Jira keys. */
-    const _errField =
-      data.error ||
-      data.errorMessage ||
-      data.err ||
-      (typeof data.message === "string" && !data.positive_tests && !data.negative_tests
-        ? data.message : null);
+    // Log unwrapped data
+    console.log("[Jira Generator] Unwrapped data:", JSON.stringify(data));
 
-    if (_errField) {
-      const _msg = typeof _errField === "string" ? _errField : JSON.stringify(_errField);
-      const _notFound = /not found|does not exist|invalid|no issue|cannot find/i.test(_msg);
+    const hasPositive = Array.isArray(data.positive_tests) && data.positive_tests.length > 0;
+    const hasNegative = Array.isArray(data.negative_tests) && data.negative_tests.length > 0;
+
+    // STRICT GATE: if we don't have at least one valid test case array, something went wrong.
+    // We do NOT rely on specific error field names since the webhook may return anything.
+    if (!hasPositive && !hasNegative) {
+
+      // Try to extract a meaningful message from whatever the webhook returned
+      const _raw = typeof data === "object" ? JSON.stringify(data) : String(data);
+      console.log("[Jira Generator] No test cases found. Raw payload:", _raw);
+
+      const _notFound =
+        /not found|does not exist|invalid issue|no issue|cannot find|issue does not|doesn't exist/i.test(_raw);
+
+      const _noContent =
+        /no description|no content|empty|missing criteria|no acceptance/i.test(_raw);
+
       if (_notFound) {
-        showAlert("Issue Not Found", `No Jira issue found for key "${key}". Double-check the key and try again.`);
+        showAlert(
+          "Jira Issue Not Found",
+          `"${key}" does not exist in your Jira project. Check that:
+• The project prefix is correct (e.g. QA, PROJ)
+• The issue number exists
+• You have access to this issue`
+        );
+      } else if (_noContent) {
+        showAlert(
+          "Could Not Generate Test Cases",
+          `"${key}" was found but has no usable content. Add a description and acceptance criteria to the issue, then try again.`
+        );
       } else {
-        showAlert("Server Error", `The server reported an error: ${_msg}`);
+        // Fallback — still don't show old results, show what we got
+        showAlert(
+          "Jira Issue Not Found",
+          `"${key}" could not be processed. It may not exist, or it may not have enough detail to generate test cases. Check the key and try again.`
+        );
       }
+
       setLoading(false);
       return;
     }
 
-    if (!data.positive_tests && !data.negative_tests) {
-      showAlert("No Test Cases", "Test cases could not be generated for this issue. The issue may be missing acceptance criteria or a description.");
-      setLoading(false);
-      return;
-    }
-
-    if (!Array.isArray(data.positive_tests) || !Array.isArray(data.negative_tests)) {
-      showAlert("Unexpected Format", "The response was received but its structure was unexpected. Please contact support.");
-      setLoading(false);
-      return;
-    }
-
-    if (data.positive_tests.length === 0 && data.negative_tests.length === 0) {
-      showAlert("No Test Cases Generated", "The AI couldn't generate any test cases. The Jira issue may lack sufficient detail (description, acceptance criteria).");
-      setLoading(false);
-      return;
-    }
-
+    // All good — we have real test cases
     globalData = data;
     setLoading(false);
     setActionBtns(true);
     renderTable(data);
-    showToast(`Generated ${data.positive_tests.length + data.negative_tests.length} test cases`, "success");
+    showToast(`Generated ${(data.positive_tests||[]).length + (data.negative_tests||[]).length} test cases for ${key}`, "success");
 
   } catch (e) {
     clearTimeout(timeout);
