@@ -43,10 +43,6 @@ align-items:center;
 margin-bottom:25px;
 }
 
-h1{
-margin:0;
-}
-
 button{
 padding:10px 16px;
 border:none;
@@ -84,8 +80,6 @@ table{
 width:100%;
 border-collapse:collapse;
 background:var(--card);
-border-radius:6px;
-overflow:hidden;
 }
 
 th,td{
@@ -96,37 +90,6 @@ text-align:left;
 
 th{
 background:var(--tableHeader);
-}
-
-.priority-high{
-color:#ef4444;
-font-weight:bold;
-}
-
-.priority-medium{
-color:#f59e0b;
-font-weight:bold;
-}
-
-.priority-low{
-color:#22c55e;
-font-weight:bold;
-}
-
-.status{
-font-weight:bold;
-}
-
-.status-untested{
-color:#94a3b8;
-}
-
-.status-pass{
-color:#22c55e;
-}
-
-.status-fail{
-color:#ef4444;
 }
 
 .steps{
@@ -144,6 +107,12 @@ font-style:italic;
 
 .section{
 margin-top:30px;
+}
+
+.error{
+color:#ef4444;
+font-weight:bold;
+margin-top:10px;
 }
 
 </style>
@@ -170,6 +139,7 @@ margin-top:30px;
 </div>
 
 <div id="loading" class="loading"></div>
+<div id="error" class="error"></div>
 
 <div id="result"></div>
 
@@ -183,14 +153,36 @@ function toggleTheme(){
 document.body.classList.toggle("light-mode")
 }
 
+/* GENERATE TEST CASES */
+
 async function generate(){
 
-const key=document.getElementById("jiraKey").value
+const key=document.getElementById("jiraKey").value.trim()
 const loading=document.getElementById("loading")
 const result=document.getElementById("result")
+const error=document.getElementById("error")
+
+loading.innerHTML=""
+result.innerHTML=""
+error.innerHTML=""
+
+/* VALIDATION 1: EMPTY FIELD */
+
+if(key===""){
+error.innerHTML="Please enter a Jira Issue Key."
+return
+}
+
+/* VALIDATION 2: INVALID FORMAT */
+
+const jiraPattern=/^[A-Z]+-\d+$/
+
+if(!jiraPattern.test(key)){
+error.innerHTML="Invalid Jira key format. Example: QA-1"
+return
+}
 
 loading.innerHTML="Generating AI test cases..."
-result.innerHTML=""
 
 try{
 
@@ -205,7 +197,23 @@ headers:{
 body:JSON.stringify({issueKey:key})
 })
 
+/* VALIDATION 3: JIRA ISSUE NOT FOUND */
+
+if(!response.ok){
+loading.innerHTML=""
+error.innerHTML="Jira issue not found. Please enter a valid Issue Key."
+return
+}
+
 const data=await response.json()
+
+/* VALIDATION 4: NO DATA RETURNED */
+
+if(!data || !data.positive_tests){
+loading.innerHTML=""
+error.innerHTML="No test cases returned for this Jira issue."
+return
+}
 
 globalData=data
 
@@ -216,11 +224,13 @@ renderTable(data)
 }catch(e){
 
 loading.innerHTML=""
-result.innerHTML="<p style='color:red'>Error loading test cases</p>"
+error.innerHTML="Unable to connect to server. Please try again later."
 
 }
 
 }
+
+/* RENDER TABLE */
 
 function renderTable(data){
 
@@ -244,20 +254,17 @@ let rows=""
 
 tests.forEach((tc,i)=>{
 
-let priority="Medium"
-
 rows+=`
 
 <tr>
 <td>${tc.test_case_id}</td>
 <td>${tc.preconditions}</td>
-<td class="priority-medium">${priority}</td>
-<td class="status status-untested">Untested</td>
 <td>
 
 <button onclick="toggleSteps('steps${i}')">Steps</button>
 
 <div class="steps" id="steps${i}">
+
 <ul>
 ${tc.steps.map(s=>`<li>${s}</li>`).join("")}
 </ul>
@@ -281,8 +288,6 @@ return`
 <tr>
 <th>ID</th>
 <th>Preconditions</th>
-<th>Priority</th>
-<th>Status</th>
 <th>Steps</th>
 </tr>
 
@@ -306,6 +311,8 @@ el.style.display="block"
 
 }
 
+/* COPY */
+
 function copyAll(){
 
 navigator.clipboard.writeText(JSON.stringify(globalData,null,2))
@@ -314,16 +321,18 @@ alert("Test cases copied")
 
 }
 
+/* EXPORT */
+
 function exportCSV(){
 
 if(!globalData) return
 
-let csv="TestCaseID,Preconditions,Priority,Status,Steps,Expected Result\n"
+let csv="TestCaseID,Preconditions,Steps,Expected Result\n"
 
 function addRows(arr){
 
 arr.forEach(tc=>{
-csv+=`${tc.test_case_id},"${tc.preconditions}",Medium,Untested,"${tc.steps.join(" | ")}","${tc.expected_result}"\n`
+csv+=`${tc.test_case_id},"${tc.preconditions}","${tc.steps.join(" | ")}","${tc.expected_result}"\n`
 })
 
 }
