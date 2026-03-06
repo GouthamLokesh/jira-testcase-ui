@@ -5,12 +5,29 @@
 
 <style>
 
+:root{
+--bg:#0f172a;
+--card:#1e293b;
+--text:white;
+--table:#020617;
+--border:#334155;
+}
+
+.light-mode{
+--bg:#f1f5f9;
+--card:white;
+--text:#020617;
+--table:#e2e8f0;
+--border:#cbd5f5;
+}
+
 body{
 font-family: Arial, sans-serif;
-background:#0f172a;
-color:white;
+background:var(--bg);
+color:var(--text);
 margin:0;
 padding:40px;
+transition:0.3s;
 }
 
 .container{
@@ -18,9 +35,23 @@ max-width:1000px;
 margin:auto;
 }
 
+.topbar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:20px;
+}
+
 h1{
-text-align:center;
-margin-bottom:30px;
+margin:0;
+}
+
+.theme-btn{
+background:#38bdf8;
+border:none;
+padding:10px 16px;
+border-radius:6px;
+cursor:pointer;
 }
 
 .search-box{
@@ -46,42 +77,40 @@ cursor:pointer;
 font-weight:bold;
 }
 
-button:hover{
-background:#0ea5e9;
-}
-
 table{
 width:100%;
 border-collapse:collapse;
 margin-top:20px;
-background:#1e293b;
+background:var(--card);
 }
 
 th,td{
 padding:12px;
-border-bottom:1px solid #334155;
+border-bottom:1px solid var(--border);
 text-align:left;
 }
 
 th{
-background:#020617;
+background:var(--table);
 }
 
 .steps{
 margin-top:10px;
-background:#020617;
+background:var(--table);
 padding:10px;
 border-radius:6px;
 display:none;
 }
 
-.export{
-margin-top:20px;
-}
-
 .loading{
 margin-top:15px;
 font-style:italic;
+}
+
+.export{
+margin-top:20px;
+display:flex;
+gap:10px;
 }
 
 </style>
@@ -91,7 +120,10 @@ font-style:italic;
 
 <div class="container">
 
+<div class="topbar">
 <h1>AI Jira Test Case Generator</h1>
+<button class="theme-btn" onclick="toggleTheme()">Toggle Theme</button>
+</div>
 
 <div class="search-box">
 <input id="jiraKey" placeholder="Enter Jira Issue Key (Example: QA-1)">
@@ -112,6 +144,31 @@ font-style:italic;
 <script>
 
 let globalData=null
+
+/* THEME HANDLING */
+
+function toggleTheme(){
+
+document.body.classList.toggle("light-mode")
+
+localStorage.setItem(
+"theme",
+document.body.classList.contains("light-mode")?"light":"dark"
+)
+
+}
+
+window.onload=function(){
+
+const savedTheme=localStorage.getItem("theme")
+
+if(savedTheme==="light"){
+document.body.classList.add("light-mode")
+}
+
+}
+
+/* API CALL */
 
 async function generate(){
 
@@ -152,16 +209,16 @@ result.innerHTML="<p style='color:red'>Error loading test cases</p>"
 
 }
 
+/* TABLE RENDER */
+
 function renderTable(data){
 
 let html=""
 
 html+=`<h2>Positive Test Cases</h2>`
-
 html+=tableHTML(data.positive_tests)
 
 html+=`<h2 style="margin-top:40px">Negative Test Cases</h2>`
-
 html+=tableHTML(data.negative_tests)
 
 document.getElementById("result").innerHTML=html
@@ -181,12 +238,14 @@ rows+=`
 <td>${tc.preconditions}</td>
 <td>
 <button onclick="toggleSteps('steps${i}')">View Steps</button>
+
 <div class="steps" id="steps${i}">
 <ul>
 ${tc.steps.map(s=>`<li>${s}</li>`).join("")}
 </ul>
 <b>Expected:</b> ${tc.expected_result}
 </div>
+
 </td>
 </tr>
 
@@ -199,7 +258,7 @@ return`
 <table>
 
 <tr>
-<th>Test Case ID</th>
+<th>ID</th>
 <th>Preconditions</th>
 <th>Steps</th>
 </tr>
@@ -211,6 +270,8 @@ ${rows}
 `
 
 }
+
+/* STEP TOGGLE */
 
 function toggleSteps(id){
 
@@ -224,6 +285,8 @@ el.style.display="block"
 
 }
 
+/* COPY */
+
 function copyAll(){
 
 navigator.clipboard.writeText(JSON.stringify(globalData,null,2))
@@ -231,6 +294,8 @@ navigator.clipboard.writeText(JSON.stringify(globalData,null,2))
 alert("Copied test cases")
 
 }
+
+/* EXPORT */
 
 function exportCSV(){
 
