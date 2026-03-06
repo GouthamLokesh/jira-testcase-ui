@@ -4,20 +4,22 @@
 <title>AI Jira Test Case Generator</title>
 
 <style>
+
 :root{
 --bg:#0f172a;
 --card:#1e293b;
 --text:white;
---table:#020617;
 --border:#334155;
+--tableHeader:#020617;
+--btn:#38bdf8;
 }
 
 .light-mode{
 --bg:#f1f5f9;
 --card:white;
 --text:#020617;
---table:#e2e8f0;
---border:#cbd5f5;
+--border:#cbd5e1;
+--tableHeader:#e2e8f0;
 }
 
 body{
@@ -30,7 +32,7 @@ transition:0.3s;
 }
 
 .container{
-max-width:1000px;
+max-width:1100px;
 margin:auto;
 }
 
@@ -38,19 +40,24 @@ margin:auto;
 display:flex;
 justify-content:space-between;
 align-items:center;
-margin-bottom:20px;
+margin-bottom:25px;
 }
 
 h1{
 margin:0;
 }
 
-.theme-btn{
-background:#38bdf8;
-border:none;
+button{
 padding:10px 16px;
+border:none;
 border-radius:6px;
+background:var(--btn);
 cursor:pointer;
+font-weight:bold;
+}
+
+button:hover{
+opacity:0.9;
 }
 
 .search-box{
@@ -67,24 +74,18 @@ border:none;
 font-size:16px;
 }
 
-button{
-padding:12px 20px;
-background:#38bdf8;
-border:none;
-border-radius:6px;
-cursor:pointer;
-font-weight:bold;
-}
-
-button:hover{
-background:#0ea5e9;
+.actions{
+display:flex;
+gap:10px;
+margin-bottom:20px;
 }
 
 table{
 width:100%;
 border-collapse:collapse;
-margin-top:20px;
 background:var(--card);
+border-radius:6px;
+overflow:hidden;
 }
 
 th,td{
@@ -94,13 +95,44 @@ text-align:left;
 }
 
 th{
-background:var(--table);
+background:var(--tableHeader);
+}
+
+.priority-high{
+color:#ef4444;
+font-weight:bold;
+}
+
+.priority-medium{
+color:#f59e0b;
+font-weight:bold;
+}
+
+.priority-low{
+color:#22c55e;
+font-weight:bold;
+}
+
+.status{
+font-weight:bold;
+}
+
+.status-untested{
+color:#94a3b8;
+}
+
+.status-pass{
+color:#22c55e;
+}
+
+.status-fail{
+color:#ef4444;
 }
 
 .steps{
+background:#020617;
+padding:12px;
 margin-top:10px;
-background:var(--table);
-padding:10px;
 border-radius:6px;
 display:none;
 }
@@ -110,27 +142,12 @@ margin-top:15px;
 font-style:italic;
 }
 
-.export{
-margin-top:20px;
-display:flex;
-gap:10px;
+.section{
+margin-top:30px;
 }
 
-.scenario-section{
-margin-top:40px;
-background:var(--card);
-padding:20px;
-border-radius:8px;
-}
-
-.scenario{
-margin-bottom:15px;
-padding:10px;
-border-left:4px solid #38bdf8;
-background:var(--table);
-border-radius:4px;
-}
 </style>
+
 </head>
 
 <body>
@@ -139,7 +156,7 @@ border-radius:4px;
 
 <div class="topbar">
 <h1>AI Jira Test Case Generator</h1>
-<button class="theme-btn" onclick="toggleTheme()">Toggle Theme</button>
+<button onclick="toggleTheme()">Toggle Theme</button>
 </div>
 
 <div class="search-box">
@@ -147,85 +164,14 @@ border-radius:4px;
 <button onclick="generate()">Generate</button>
 </div>
 
-<div class="loading" id="loading"></div>
-
-<div class="export">
+<div class="actions">
 <button onclick="exportCSV()">Export to Excel</button>
 <button onclick="copyAll()">Copy Test Cases</button>
-<button onclick="toggleScenarios()">Show Test Scenarios</button>
 </div>
+
+<div id="loading" class="loading"></div>
 
 <div id="result"></div>
-
-<div id="scenarios" class="scenario-section" style="display:none">
-
-<h2>UI Test Scenarios</h2>
-
-<h3>Positive Scenarios</h3>
-
-<div class="scenario">
-<b>PS001 - Generate Test Cases</b><br>
-Steps: Enter valid Jira key → Click Generate<br>
-Expected: Positive and Negative test cases displayed.
-</div>
-
-<div class="scenario">
-<b>PS002 - Expand Steps</b><br>
-Steps: Click "View Steps"<br>
-Expected: Steps and Expected Result displayed.
-</div>
-
-<div class="scenario">
-<b>PS003 - Export Test Cases</b><br>
-Steps: Generate tests → Click Export to Excel<br>
-Expected: CSV file downloaded.
-</div>
-
-<div class="scenario">
-<b>PS004 - Copy Test Cases</b><br>
-Steps: Click Copy Test Cases<br>
-Expected: Test cases copied to clipboard.
-</div>
-
-<div class="scenario">
-<b>PS005 - Toggle Theme</b><br>
-Steps: Click Toggle Theme<br>
-Expected: UI switches between Dark and Light mode.
-</div>
-
-<h3>Negative Scenarios</h3>
-
-<div class="scenario">
-<b>NS001 - Empty Jira Key</b><br>
-Steps: Click Generate without entering key<br>
-Expected: Validation error displayed.
-</div>
-
-<div class="scenario">
-<b>NS002 - Invalid Jira Key</b><br>
-Steps: Enter invalid key like "ABC123"<br>
-Expected: Error message returned.
-</div>
-
-<div class="scenario">
-<b>NS003 - API Failure</b><br>
-Steps: Simulate server failure<br>
-Expected: "Error loading test cases" shown.
-</div>
-
-<div class="scenario">
-<b>NS004 - Large Response</b><br>
-Steps: Generate 50+ test cases<br>
-Expected: UI scroll works correctly.
-</div>
-
-<div class="scenario">
-<b>NS005 - Export Without Data</b><br>
-Steps: Click Export before generating tests<br>
-Expected: No download or warning shown.
-</div>
-
-</div>
 
 </div>
 
@@ -235,22 +181,6 @@ let globalData=null
 
 function toggleTheme(){
 document.body.classList.toggle("light-mode")
-localStorage.setItem(
-"theme",
-document.body.classList.contains("light-mode")?"light":"dark"
-)
-}
-
-window.onload=function(){
-const savedTheme=localStorage.getItem("theme")
-if(savedTheme==="light"){
-document.body.classList.add("light-mode")
-}
-}
-
-function toggleScenarios(){
-const el=document.getElementById("scenarios")
-el.style.display = el.style.display==="none" ? "block":"none"
 }
 
 async function generate(){
@@ -259,8 +189,8 @@ const key=document.getElementById("jiraKey").value
 const loading=document.getElementById("loading")
 const result=document.getElementById("result")
 
+loading.innerHTML="Generating AI test cases..."
 result.innerHTML=""
-loading.innerHTML="Generating test cases..."
 
 try{
 
@@ -278,7 +208,9 @@ body:JSON.stringify({issueKey:key})
 const data=await response.json()
 
 globalData=data
+
 loading.innerHTML=""
+
 renderTable(data)
 
 }catch(e){
@@ -294,11 +226,13 @@ function renderTable(data){
 
 let html=""
 
-html+=`<h2>Positive Test Cases</h2>`
+html+=`<div class="section"><h2>Positive Test Cases</h2>`
 html+=tableHTML(data.positive_tests)
+html+=`</div>`
 
-html+=`<h2 style="margin-top:40px">Negative Test Cases</h2>`
+html+=`<div class="section"><h2>Negative Test Cases</h2>`
 html+=tableHTML(data.negative_tests)
+html+=`</div>`
 
 document.getElementById("result").innerHTML=html
 
@@ -310,34 +244,50 @@ let rows=""
 
 tests.forEach((tc,i)=>{
 
+let priority="Medium"
+
 rows+=`
+
 <tr>
 <td>${tc.test_case_id}</td>
 <td>${tc.preconditions}</td>
+<td class="priority-medium">${priority}</td>
+<td class="status status-untested">Untested</td>
 <td>
-<button onclick="toggleSteps('steps${i}')">View Steps</button>
+
+<button onclick="toggleSteps('steps${i}')">Steps</button>
 
 <div class="steps" id="steps${i}">
 <ul>
 ${tc.steps.map(s=>`<li>${s}</li>`).join("")}
 </ul>
-<b>Expected:</b> ${tc.expected_result}
+
+<b>Expected Result:</b>
+<p>${tc.expected_result}</p>
+
 </div>
 
 </td>
 </tr>
+
 `
+
 })
 
 return`
 
 <table>
+
 <tr>
 <th>ID</th>
 <th>Preconditions</th>
+<th>Priority</th>
+<th>Status</th>
 <th>Steps</th>
 </tr>
+
 ${rows}
+
 </table>
 
 `
@@ -345,25 +295,37 @@ ${rows}
 }
 
 function toggleSteps(id){
+
 const el=document.getElementById(id)
-el.style.display = el.style.display==="block" ? "none":"block"
+
+if(el.style.display==="block"){
+el.style.display="none"
+}else{
+el.style.display="block"
+}
+
 }
 
 function copyAll(){
+
 navigator.clipboard.writeText(JSON.stringify(globalData,null,2))
-alert("Copied test cases")
+
+alert("Test cases copied")
+
 }
 
 function exportCSV(){
 
 if(!globalData) return
 
-let csv="TestCaseID,Preconditions,Steps,Expected Result\n"
+let csv="TestCaseID,Preconditions,Priority,Status,Steps,Expected Result\n"
 
 function addRows(arr){
+
 arr.forEach(tc=>{
-csv+=`${tc.test_case_id},"${tc.preconditions}","${tc.steps.join(" | ")}","${tc.expected_result}"\n`
+csv+=`${tc.test_case_id},"${tc.preconditions}",Medium,Untested,"${tc.steps.join(" | ")}","${tc.expected_result}"\n`
 })
+
 }
 
 addRows(globalData.positive_tests)
