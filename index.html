@@ -894,9 +894,35 @@ async function generate() {
       return;
     }
 
-    /* V4: Empty / malformed response */
+    /* V4: Empty response */
     if (!data) {
-      showAlert("Empty Response", "No data was returned for this issue. It may exist but have no content to generate tests from.");
+      showAlert("Empty Response", "No data was returned for this issue.");
+      setLoading(false);
+      return;
+    }
+
+    // n8n sometimes wraps the response in a single-element array — unwrap it
+    if (Array.isArray(data)) {
+      data = data[0] || {};
+    }
+
+    /* V5: Webhook returned HTTP 200 but with an error body.
+       n8n returns 200 + { message/error/errorMessage } for invalid Jira keys. */
+    const _errField =
+      data.error ||
+      data.errorMessage ||
+      data.err ||
+      (typeof data.message === "string" && !data.positive_tests && !data.negative_tests
+        ? data.message : null);
+
+    if (_errField) {
+      const _msg = typeof _errField === "string" ? _errField : JSON.stringify(_errField);
+      const _notFound = /not found|does not exist|invalid|no issue|cannot find/i.test(_msg);
+      if (_notFound) {
+        showAlert("Issue Not Found", `No Jira issue found for key "${key}". Double-check the key and try again.`);
+      } else {
+        showAlert("Server Error", `The server reported an error: ${_msg}`);
+      }
       setLoading(false);
       return;
     }
