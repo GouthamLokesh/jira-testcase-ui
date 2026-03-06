@@ -4,7 +4,6 @@
 <title>AI Jira Test Case Generator</title>
 
 <style>
-
 :root{
 --bg:#0f172a;
 --card:#1e293b;
@@ -77,6 +76,10 @@ cursor:pointer;
 font-weight:bold;
 }
 
+button:hover{
+background:#0ea5e9;
+}
+
 table{
 width:100%;
 border-collapse:collapse;
@@ -113,6 +116,20 @@ display:flex;
 gap:10px;
 }
 
+.scenario-section{
+margin-top:40px;
+background:var(--card);
+padding:20px;
+border-radius:8px;
+}
+
+.scenario{
+margin-bottom:15px;
+padding:10px;
+border-left:4px solid #38bdf8;
+background:var(--table);
+border-radius:4px;
+}
 </style>
 </head>
 
@@ -135,9 +152,80 @@ gap:10px;
 <div class="export">
 <button onclick="exportCSV()">Export to Excel</button>
 <button onclick="copyAll()">Copy Test Cases</button>
+<button onclick="toggleScenarios()">Show Test Scenarios</button>
 </div>
 
 <div id="result"></div>
+
+<div id="scenarios" class="scenario-section" style="display:none">
+
+<h2>UI Test Scenarios</h2>
+
+<h3>Positive Scenarios</h3>
+
+<div class="scenario">
+<b>PS001 - Generate Test Cases</b><br>
+Steps: Enter valid Jira key → Click Generate<br>
+Expected: Positive and Negative test cases displayed.
+</div>
+
+<div class="scenario">
+<b>PS002 - Expand Steps</b><br>
+Steps: Click "View Steps"<br>
+Expected: Steps and Expected Result displayed.
+</div>
+
+<div class="scenario">
+<b>PS003 - Export Test Cases</b><br>
+Steps: Generate tests → Click Export to Excel<br>
+Expected: CSV file downloaded.
+</div>
+
+<div class="scenario">
+<b>PS004 - Copy Test Cases</b><br>
+Steps: Click Copy Test Cases<br>
+Expected: Test cases copied to clipboard.
+</div>
+
+<div class="scenario">
+<b>PS005 - Toggle Theme</b><br>
+Steps: Click Toggle Theme<br>
+Expected: UI switches between Dark and Light mode.
+</div>
+
+<h3>Negative Scenarios</h3>
+
+<div class="scenario">
+<b>NS001 - Empty Jira Key</b><br>
+Steps: Click Generate without entering key<br>
+Expected: Validation error displayed.
+</div>
+
+<div class="scenario">
+<b>NS002 - Invalid Jira Key</b><br>
+Steps: Enter invalid key like "ABC123"<br>
+Expected: Error message returned.
+</div>
+
+<div class="scenario">
+<b>NS003 - API Failure</b><br>
+Steps: Simulate server failure<br>
+Expected: "Error loading test cases" shown.
+</div>
+
+<div class="scenario">
+<b>NS004 - Large Response</b><br>
+Steps: Generate 50+ test cases<br>
+Expected: UI scroll works correctly.
+</div>
+
+<div class="scenario">
+<b>NS005 - Export Without Data</b><br>
+Steps: Click Export before generating tests<br>
+Expected: No download or warning shown.
+</div>
+
+</div>
 
 </div>
 
@@ -145,30 +233,25 @@ gap:10px;
 
 let globalData=null
 
-/* THEME HANDLING */
-
 function toggleTheme(){
-
 document.body.classList.toggle("light-mode")
-
 localStorage.setItem(
 "theme",
 document.body.classList.contains("light-mode")?"light":"dark"
 )
-
 }
 
 window.onload=function(){
-
 const savedTheme=localStorage.getItem("theme")
-
 if(savedTheme==="light"){
 document.body.classList.add("light-mode")
 }
-
 }
 
-/* API CALL */
+function toggleScenarios(){
+const el=document.getElementById("scenarios")
+el.style.display = el.style.display==="none" ? "block":"none"
+}
 
 async function generate(){
 
@@ -195,9 +278,7 @@ body:JSON.stringify({issueKey:key})
 const data=await response.json()
 
 globalData=data
-
 loading.innerHTML=""
-
 renderTable(data)
 
 }catch(e){
@@ -208,8 +289,6 @@ result.innerHTML="<p style='color:red'>Error loading test cases</p>"
 }
 
 }
-
-/* TABLE RENDER */
 
 function renderTable(data){
 
@@ -232,7 +311,6 @@ let rows=""
 tests.forEach((tc,i)=>{
 
 rows+=`
-
 <tr>
 <td>${tc.test_case_id}</td>
 <td>${tc.preconditions}</td>
@@ -248,54 +326,33 @@ ${tc.steps.map(s=>`<li>${s}</li>`).join("")}
 
 </td>
 </tr>
-
 `
-
 })
 
 return`
 
 <table>
-
 <tr>
 <th>ID</th>
 <th>Preconditions</th>
 <th>Steps</th>
 </tr>
-
 ${rows}
-
 </table>
 
 `
 
 }
 
-/* STEP TOGGLE */
-
 function toggleSteps(id){
-
 const el=document.getElementById(id)
-
-if(el.style.display==="block"){
-el.style.display="none"
-}else{
-el.style.display="block"
+el.style.display = el.style.display==="block" ? "none":"block"
 }
-
-}
-
-/* COPY */
 
 function copyAll(){
-
 navigator.clipboard.writeText(JSON.stringify(globalData,null,2))
-
 alert("Copied test cases")
-
 }
-
-/* EXPORT */
 
 function exportCSV(){
 
@@ -304,11 +361,9 @@ if(!globalData) return
 let csv="TestCaseID,Preconditions,Steps,Expected Result\n"
 
 function addRows(arr){
-
 arr.forEach(tc=>{
 csv+=`${tc.test_case_id},"${tc.preconditions}","${tc.steps.join(" | ")}","${tc.expected_result}"\n`
 })
-
 }
 
 addRows(globalData.positive_tests)
