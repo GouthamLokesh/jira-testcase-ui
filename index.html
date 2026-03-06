@@ -6,13 +6,14 @@
 <style>
 
 body{
-font-family: Arial;
+font-family: Arial, sans-serif;
 background:#0f172a;
 display:flex;
 justify-content:center;
-align-items:center;
-height:100vh;
+align-items:flex-start;
+min-height:100vh;
 margin:0;
+padding-top:40px;
 color:white;
 }
 
@@ -20,7 +21,9 @@ color:white;
 background:#1e293b;
 padding:30px;
 border-radius:12px;
-width:650px;
+width:700px;
+max-width:90%;
+box-shadow:0 8px 25px rgba(0,0,0,0.4);
 }
 
 h1{
@@ -34,6 +37,7 @@ padding:12px;
 border-radius:6px;
 border:none;
 margin-bottom:15px;
+font-size:16px;
 }
 
 button{
@@ -44,6 +48,7 @@ border:none;
 border-radius:6px;
 cursor:pointer;
 font-weight:bold;
+font-size:16px;
 }
 
 button:hover{
@@ -51,19 +56,25 @@ background:#0ea5e9;
 }
 
 #loading{
-margin-top:10px;
+margin-top:15px;
 text-align:center;
+font-style:italic;
 }
 
 .section{
-margin-top:25px;
+margin-top:30px;
 }
 
 .testcase{
 background:#0f172a;
-padding:12px;
-margin-top:10px;
-border-radius:6px;
+padding:15px;
+margin-top:15px;
+border-radius:8px;
+border-left:4px solid #38bdf8;
+}
+
+.testcase ul{
+margin-top:5px;
 }
 
 </style>
@@ -179,7 +190,7 @@ result.innerHTML=html
 }catch(err){
 
 loading.innerHTML=""
-result.innerHTML="Error: "+err.message
+result.innerHTML="<p style='color:red'>Error: "+err.message+"</p>"
 
 }
 
