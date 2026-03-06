@@ -1,3 +1,76 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>AI Jira Test Case Generator</title>
+
+<style>
+
+body{
+font-family: Arial;
+background:#0f172a;
+color:white;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+.container{
+background:#1e293b;
+padding:40px;
+border-radius:10px;
+width:600px;
+}
+
+input{
+width:100%;
+padding:10px;
+margin-top:10px;
+border-radius:5px;
+border:none;
+}
+
+button{
+margin-top:15px;
+padding:12px;
+width:100%;
+background:#38bdf8;
+border:none;
+border-radius:5px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.card{
+background:#020617;
+padding:15px;
+margin-top:15px;
+border-radius:8px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>AI Jira Test Case Generator</h2>
+
+<input id="jiraKey" placeholder="Enter Jira Issue Key (ex: PROJ-123)">
+
+<button onclick="generate()">Generate Test Cases</button>
+
+<div id="loading"></div>
+
+<div id="result"></div>
+
+</div>
+
+<script>
+
 async function generate(){
 
 let key=document.getElementById("jiraKey").value
@@ -27,8 +100,10 @@ loading.innerHTML=""
 let html=""
 
 data.positive_tests.forEach(tc=>{
+
 html+=`
-<div style="border:1px solid #334155;padding:15px;margin-top:10px;border-radius:8px;">
+<div class="card">
+
 <h3>${tc.test_case_id}</h3>
 
 <b>Preconditions</b>
@@ -44,6 +119,7 @@ ${tc.steps.map(step=>`<li>${step}</li>`).join("")}
 
 </div>
 `
+
 })
 
 result.innerHTML=html
@@ -56,3 +132,9 @@ result.innerHTML="Error: "+err.message
 }
 
 }
+
+</script>
+
+</body>
+
+</html>
