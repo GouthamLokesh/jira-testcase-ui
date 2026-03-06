@@ -1,1112 +1,201 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta charset="UTF-8">
 <title>AI Jira Test Case Generator</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
 <style>
-
-:root {
-  --bg: #080e1a;
-  --surface: #0f1929;
-  --card: #131f30;
-  --border: #1e3048;
-  --border-focus: #38bdf8;
-  --text: #e2eaf4;
-  --text-muted: #64748b;
-  --accent: #38bdf8;
-  --accent-glow: rgba(56,189,248,0.15);
-  --success: #22d3a0;
-  --success-bg: rgba(34,211,160,0.08);
-  --error: #f87171;
-  --error-bg: rgba(248,113,113,0.08);
-  --error-border: rgba(248,113,113,0.3);
-  --warn: #fbbf24;
-  --warn-bg: rgba(251,191,36,0.08);
-  --header-bg: #020810;
-  --btn-text: #020810;
-  --radius: 8px;
+body{
+font-family: Arial;
+background:#f4f6f8;
+margin:0;
+padding:0;
 }
 
-.light-mode {
-  --bg: #f0f4f8;
-  --surface: #ffffff;
-  --card: #f8fafc;
-  --border: #cbd5e1;
-  --border-focus: #0284c7;
-  --text: #0f172a;
-  --text-muted: #94a3b8;
-  --accent: #0284c7;
-  --accent-glow: rgba(2,132,199,0.1);
-  --success: #059669;
-  --success-bg: rgba(5,150,105,0.06);
-  --error: #dc2626;
-  --error-bg: rgba(220,38,38,0.06);
-  --error-border: rgba(220,38,38,0.25);
-  --warn: #d97706;
-  --warn-bg: rgba(217,119,6,0.06);
-  --header-bg: #e2e8f0;
-  --btn-text: #ffffff;
+.container{
+max-width:900px;
+margin:60px auto;
+background:white;
+padding:40px;
+border-radius:12px;
+box-shadow:0 10px 30px rgba(0,0,0,0.1);
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  font-family: 'Inter', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  padding: 32px 20px 60px;
-  transition: background 0.3s, color 0.3s;
+h1{
+text-align:center;
+color:#1f2937;
 }
 
-/* Grid lines background */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(56,189,248,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(56,189,248,0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events: none;
-  z-index: 0;
+.input-box{
+display:flex;
+gap:10px;
+margin-top:20px;
 }
 
-.light-mode body::before {
-  background-image:
-    linear-gradient(rgba(2,132,199,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(2,132,199,0.04) 1px, transparent 1px);
+input{
+flex:1;
+padding:12px;
+font-size:16px;
+border:1px solid #ddd;
+border-radius:8px;
 }
 
-.container {
-  max-width: 1100px;
-  margin: auto;
-  position: relative;
-  z-index: 1;
+button{
+background:#2563eb;
+color:white;
+border:none;
+padding:12px 20px;
+border-radius:8px;
+cursor:pointer;
+font-weight:bold;
 }
 
-/* TOPBAR */
-.topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 36px;
+button:hover{
+background:#1d4ed8;
 }
 
-.brand {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.loader{
+display:none;
+text-align:center;
+margin-top:20px;
 }
 
-.brand-tag {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  color: var(--accent);
-  letter-spacing: 2px;
-  text-transform: uppercase;
+.testcases{
+margin-top:30px;
 }
 
-h1 {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text);
-  letter-spacing: -0.5px;
+.card{
+background:#f9fafb;
+padding:15px;
+border-radius:8px;
+margin-bottom:15px;
+border-left:4px solid #2563eb;
 }
 
-.theme-btn {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--text-muted);
-  font-size: 13px;
-  font-family: 'Inter', sans-serif;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
+.steps{
+margin-top:10px;
+padding-left:20px;
 }
 
-.theme-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+.error{
+color:red;
+margin-top:20px;
+font-weight:bold;
 }
-
-/* INPUT PANEL */
-.input-panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 20px;
-}
-
-.input-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-muted);
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.search-row {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-}
-
-.input-wrapper {
-  flex: 1;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.jira-input {
-  width: 100%;
-  padding: 13px 44px 13px 16px;
-  border-radius: var(--radius);
-  border: 1.5px solid var(--border);
-  background: var(--card);
-  color: var(--text);
-  font-size: 15px;
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  outline: none;
-}
-
-.jira-input::placeholder {
-  color: var(--text-muted);
-  font-weight: 400;
-  letter-spacing: 0;
-}
-
-.jira-input:focus {
-  border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px var(--accent-glow);
-}
-
-.jira-input.input-error {
-  border-color: var(--error);
-  box-shadow: 0 0 0 3px var(--error-bg);
-}
-
-.jira-input.input-success {
-  border-color: var(--success);
-  box-shadow: 0 0 0 3px var(--success-bg);
-}
-
-.input-icon {
-  position: absolute;
-  right: 14px;
-  top: 14px;
-  width: 18px;
-  height: 18px;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.input-icon.visible { opacity: 1; }
-
-.field-hint {
-  font-size: 12px;
-  min-height: 16px;
-  transition: color 0.2s;
-  color: var(--text-muted);
-  padding-left: 2px;
-}
-
-.field-hint.hint-error { color: var(--error); }
-.field-hint.hint-success { color: var(--success); }
-
-/* GENERATE BUTTON */
-.gen-btn {
-  padding: 13px 24px;
-  border: none;
-  border-radius: var(--radius);
-  background: var(--accent);
-  color: var(--btn-text);
-  font-size: 14px;
-  font-family: 'Inter', sans-serif;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
-  white-space: nowrap;
-  letter-spacing: 0.3px;
-  flex-shrink: 0;
-}
-
-.gen-btn:hover:not(:disabled) {
-  opacity: 0.92;
-  box-shadow: 0 4px 20px var(--accent-glow);
-  transform: translateY(-1px);
-}
-
-.gen-btn:active:not(:disabled) { transform: translateY(0); }
-
-.gen-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* SPINNER */
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.spinner {
-  width: 16px; height: 16px;
-  border: 2px solid rgba(2,8,16,0.3);
-  border-top-color: var(--btn-text);
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  display: none;
-}
-
-.gen-btn.loading .spinner { display: block; }
-.gen-btn.loading .btn-icon { display: none; }
-
-/* LOADING BAR */
-.loading-bar-wrap {
-  height: 3px;
-  background: var(--border);
-  border-radius: 99px;
-  margin-top: 16px;
-  overflow: hidden;
-  display: none;
-}
-
-.loading-bar-wrap.active { display: block; }
-
-@keyframes loadbar {
-  0% { transform: translateX(-100%); }
-  50% { transform: translateX(0%); }
-  100% { transform: translateX(100%); }
-}
-
-.loading-bar {
-  height: 100%;
-  width: 60%;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  animation: loadbar 1.4s ease-in-out infinite;
-}
-
-.loading-status {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-top: 10px;
-  font-style: italic;
-  display: none;
-  align-items: center;
-  gap: 8px;
-}
-
-.loading-status.active { display: flex; }
-
-/* TOAST */
-#toast-container {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  z-index: 1000;
-}
-
-.toast {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 18px;
-  border-radius: var(--radius);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text);
-  border: 1px solid var(--border);
-  background: var(--surface);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-  animation: slideIn 0.3s ease forwards;
-  max-width: 320px;
-  min-width: 200px;
-}
-
-.toast.success { border-color: var(--success); background: var(--success-bg); color: var(--success); }
-.toast.error   { border-color: var(--error);   background: var(--error-bg);   color: var(--error); }
-.toast.warn    { border-color: var(--warn);    background: var(--warn-bg);    color: var(--warn); }
-
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(30px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes fadeOut {
-  from { opacity: 1; transform: translateX(0); }
-  to   { opacity: 0; transform: translateX(30px); }
-}
-
-.toast.hiding { animation: fadeOut 0.3s ease forwards; }
-
-/* INLINE ALERT */
-.alert-box {
-  display: none;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px 16px;
-  border-radius: var(--radius);
-  border: 1px solid;
-  margin-top: 16px;
-  font-size: 13.5px;
-  line-height: 1.5;
-}
-
-.alert-box.active { display: flex; }
-
-.alert-box.error {
-  background: var(--error-bg);
-  border-color: var(--error-border);
-  color: var(--error);
-}
-
-.alert-icon { flex-shrink: 0; width: 18px; height: 18px; margin-top: 1px; }
-
-.alert-content { flex: 1; }
-.alert-title { font-weight: 700; margin-bottom: 2px; }
-.alert-desc { opacity: 0.85; }
-
-.alert-close {
-  background: none; border: none;
-  color: inherit; cursor: pointer;
-  opacity: 0.6; font-size: 18px;
-  padding: 0; line-height: 1;
-  transition: opacity 0.2s; flex-shrink: 0;
-}
-
-.alert-close:hover { opacity: 1; }
-
-/* ACTIONS */
-.actions {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-}
-
-.action-btn {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 9px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--text);
-  font-size: 13px;
-  font-family: 'Inter', sans-serif;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.action-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--accent-glow);
-}
-
-.action-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-/* RESULTS */
-.section {
-  margin-bottom: 28px;
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.section-title {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
-.section-title.positive { color: var(--success); }
-.section-title.negative { color: var(--error); }
-
-.badge {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 99px;
-  font-family: 'JetBrains Mono', monospace;
-}
-
-.badge.positive { background: var(--success-bg); color: var(--success); border: 1px solid var(--success); }
-.badge.negative { background: var(--error-bg);   color: var(--error);   border: 1px solid var(--error); }
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  overflow: hidden;
-  font-size: 14px;
-}
-
-th {
-  background: var(--header-bg);
-  padding: 11px 16px;
-  text-align: left;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  border-bottom: 1px solid var(--border);
-}
-
-td {
-  padding: 13px 16px;
-  border-bottom: 1px solid var(--border);
-  vertical-align: top;
-  line-height: 1.5;
-}
-
-tr:last-child td { border-bottom: none; }
-tr:hover td { background: rgba(56,189,248,0.03); }
-
-.tc-id {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--accent);
-  white-space: nowrap;
-}
-
-/* STEPS TOGGLE */
-.steps-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--card);
-  color: var(--text);
-  font-size: 12px;
-  font-family: 'Inter', sans-serif;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.steps-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.steps-btn .chevron {
-  display: inline-block;
-  transition: transform 0.2s;
-  font-size: 10px;
-}
-
-.steps-btn.open .chevron { transform: rotate(180deg); }
-
-.steps-drawer {
-  background: var(--card);
-  border: 1px solid var(--border);
-  padding: 14px 16px;
-  margin-top: 10px;
-  border-radius: 8px;
-  display: none;
-  animation: fadeDown 0.15s ease;
-}
-
-@keyframes fadeDown {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.steps-drawer ul {
-  padding-left: 18px;
-  margin-bottom: 12px;
-}
-
-.steps-drawer li {
-  font-size: 13px;
-  color: var(--text);
-  line-height: 1.6;
-  margin-bottom: 4px;
-}
-
-.expected-label {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--success);
-  margin-bottom: 5px;
-}
-
-.expected-text {
-  font-size: 13px;
-  color: var(--text);
-  line-height: 1.5;
-  background: var(--success-bg);
-  border-left: 2px solid var(--success);
-  padding: 8px 12px;
-  border-radius: 0 4px 4px 0;
-}
-
-/* EMPTY STATE */
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-  color: var(--text-muted);
-}
-
-.empty-icon { font-size: 40px; margin-bottom: 12px; }
-.empty-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
-.empty-desc { font-size: 13px; }
-
 </style>
-</head>
-<body>
 
-<div id="toast-container"></div>
+</head>
+
+<body>
 
 <div class="container">
 
-  <!-- TOPBAR -->
-  <div class="topbar">
-    <div class="brand">
-      <span class="brand-tag">// QA Automation</span>
-      <h1>Jira Test Case Generator</h1>
-    </div>
-    <button class="theme-btn" onclick="toggleTheme()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-      Toggle Theme
-    </button>
-  </div>
+<h1>AI Jira Test Case Generator</h1>
 
-  <!-- INPUT PANEL -->
-  <div class="input-panel">
-    <div class="input-label">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-      Jira Issue Key
-    </div>
+<div class="input-box">
+<input id="issueKey" placeholder="Enter Jira Issue Key (e.g QA-1)">
+<button onclick="generate()">Generate</button>
+</div>
 
-    <div class="search-row">
-      <div class="input-wrapper">
-        <div style="position:relative">
-          <input
-            id="jiraKey"
-            class="jira-input"
-            placeholder="e.g. QA-101, PROJ-42"
-            autocomplete="off"
-            spellcheck="false"
-            maxlength="30"
-            oninput="validateInput()"
-            onkeydown="handleKeydown(event)"
-          >
-          <!-- Success icon -->
-          <svg id="icon-ok" class="input-icon" style="color:var(--success)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-          <!-- Error icon -->
-          <svg id="icon-err" class="input-icon" style="color:var(--error)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
-        </div>
-        <span id="fieldHint" class="field-hint">Format: PROJECT-123 (uppercase letters, hyphen, number)</span>
-      </div>
+<div class="loader" id="loader">
+Generating test cases...
+</div>
 
-      <button id="genBtn" class="gen-btn" onclick="generate()">
-        <span class="btn-icon">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        </span>
-        <div class="spinner"></div>
-        Generate
-      </button>
-    </div>
+<div class="error" id="error"></div>
 
-    <div class="loading-bar-wrap" id="loadingBar"><div class="loading-bar"></div></div>
-    <div class="loading-status" id="loadingStatus">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-      <span id="loadingText">Fetching Jira issue and generating test cases...</span>
-    </div>
-
-    <!-- Inline Alert -->
-    <div id="alertBox" class="alert-box error">
-      <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-      <div class="alert-content">
-        <div class="alert-title" id="alertTitle">Error</div>
-        <div class="alert-desc" id="alertDesc"></div>
-      </div>
-      <button class="alert-close" onclick="clearAlert()">×</button>
-    </div>
-
-  </div>
-
-  <!-- ACTION BUTTONS -->
-  <div class="actions">
-    <button class="action-btn" id="btnExport" onclick="exportCSV()" disabled>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Export to CSV
-    </button>
-    <button class="action-btn" id="btnCopy" onclick="copyAll()" disabled>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-      Copy JSON
-    </button>
-  </div>
-
-  <!-- RESULT -->
-  <div id="result">
-    <div class="empty-state">
-      <div class="empty-icon">🧪</div>
-      <div class="empty-title">No test cases yet</div>
-      <div class="empty-desc">Enter a Jira Issue Key above and click Generate to get started.</div>
-    </div>
-  </div>
+<div class="testcases" id="results"></div>
 
 </div>
 
 <script>
 
-let globalData = null;
-let inputValid = false;
+async function generate(){
 
-/* ── THEME ── */
-function toggleTheme() {
-  document.body.classList.toggle("light-mode");
+const issueKey=document.getElementById("issueKey").value;
+
+document.getElementById("loader").style.display="block";
+document.getElementById("results").innerHTML="";
+document.getElementById("error").innerText="";
+
+try{
+
+const response=await fetch(
+"https://n8n-public-epns.onrender.com/webhook/Jira-Test-Case-Generator",
+{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+"x-path-api":"Goutham@12"
+},
+body:JSON.stringify({
+issueKey:issueKey
+})
+});
+
+const data=await response.json();
+
+if(data.error){
+
+document.getElementById("error").innerText=data.message;
+document.getElementById("loader").style.display="none";
+return;
+
 }
 
-/* ── REAL-TIME INPUT VALIDATION ── */
-function validateInput() {
-  const val = document.getElementById("jiraKey").value.trim();
-  const input = document.getElementById("jiraKey");
-  const hint = document.getElementById("fieldHint");
-  const iconOk = document.getElementById("icon-ok");
-  const iconErr = document.getElementById("icon-err");
+renderResults(data);
 
-  clearAlert();
+}catch(err){
 
-  // Empty state — reset
-  if (val === "") {
-    input.className = "jira-input";
-    hint.textContent = "Format: PROJECT-123 (uppercase letters, hyphen, number)";
-    hint.className = "field-hint";
-    iconOk.classList.remove("visible");
-    iconErr.classList.remove("visible");
-    inputValid = false;
-    return;
-  }
-
-  const jiraPattern = /^[A-Z]+-\d+$/;
-
-  // Partial typing feedback
-  const partialPattern = /^[A-Za-z]+(-\d*)?$/;
-
-  if (jiraPattern.test(val)) {
-    input.className = "jira-input input-success";
-    hint.textContent = "✓ Valid Jira key format";
-    hint.className = "field-hint hint-success";
-    iconOk.classList.add("visible");
-    iconErr.classList.remove("visible");
-    inputValid = true;
-  } else if (partialPattern.test(val)) {
-    input.className = "jira-input";
-    hint.textContent = "Keep typing — e.g. " + val.toUpperCase().replace("-","") + "-101";
-    hint.className = "field-hint";
-    iconOk.classList.remove("visible");
-    iconErr.classList.remove("visible");
-    inputValid = false;
-  } else {
-    input.className = "jira-input input-error";
-    hint.textContent = "Invalid format. Use uppercase letters, a hyphen, then numbers. E.g. QA-1";
-    hint.className = "field-hint hint-error";
-    iconOk.classList.remove("visible");
-    iconErr.classList.add("visible");
-    inputValid = false;
-  }
+document.getElementById("error").innerText="Server error";
 }
 
-/* ── ENTER KEY SUPPORT ── */
-function handleKeydown(e) {
-  if (e.key === "Enter") generate();
+document.getElementById("loader").style.display="none";
+
 }
 
-/* ── ALERT ── */
-function showAlert(title, desc) {
-  document.getElementById("alertTitle").textContent = title;
-  document.getElementById("alertDesc").textContent = desc;
-  document.getElementById("alertBox").classList.add("active");
+function renderResults(data){
+
+const container=document.getElementById("results");
+
+container.innerHTML+=`<h2>Issue: ${data.issue_key}</h2>`;
+
+container.innerHTML+=`<h3>Positive Tests</h3>`;
+data.positive_tests.forEach(t=>{
+container.innerHTML+=card(t);
+});
+
+container.innerHTML+=`<h3>Negative Tests</h3>`;
+data.negative_tests.forEach(t=>{
+container.innerHTML+=card(t);
+});
+
 }
 
-function clearAlert() {
-  document.getElementById("alertBox").classList.remove("active");
-}
+function card(test){
 
-/* ── TOAST ── */
-function showToast(msg, type = "success", duration = 3000) {
-  const icons = {
-    success: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>`,
-    error:   `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>`,
-    warn:    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
-  };
-  const toast = document.createElement("div");
-  toast.className = `toast ${type}`;
-  toast.innerHTML = icons[type] + `<span>${msg}</span>`;
-  document.getElementById("toast-container").appendChild(toast);
-  setTimeout(() => {
-    toast.classList.add("hiding");
-    setTimeout(() => toast.remove(), 300);
-  }, duration);
-}
+let stepsHTML="";
+test.steps.forEach(s=>{
+stepsHTML+=`<li>${s}</li>`;
+});
 
-/* ── SET LOADING STATE ── */
-function setLoading(on) {
-  const btn = document.getElementById("genBtn");
-  const bar = document.getElementById("loadingBar");
-  const status = document.getElementById("loadingStatus");
+return `
+<div class="card">
+<strong>${test.test_case_id}</strong>
 
-  if (on) {
-    btn.disabled = true;
-    btn.classList.add("loading");
-    bar.classList.add("active");
-    status.classList.add("active");
-  } else {
-    btn.disabled = false;
-    btn.classList.remove("loading");
-    bar.classList.remove("active");
-    status.classList.remove("active");
-  }
-}
+<p><b>Preconditions:</b> ${test.preconditions}</p>
 
-/* ── GENERATE ── */
-async function generate() {
-  const key = document.getElementById("jiraKey").value.trim();
+<b>Steps</b>
+<ul class="steps">
+${stepsHTML}
+</ul>
 
-  // Always reset state immediately — prevent stale data from showing
-  clearAlert();
-  globalData = null;
-  setActionBtns(false);
-  document.getElementById("result").innerHTML = `
-    <div class="empty-state">
-      <div class="empty-icon">🧪</div>
-      <div class="empty-title">No test cases yet</div>
-      <div class="empty-desc">Enter a Jira Issue Key above and click Generate to get started.</div>
-    </div>`;
+<p><b>Expected Result:</b> ${test.expected_result}</p>
+</div>
+`;
 
-  /* V1: Empty field */
-  if (key === "") {
-    document.getElementById("jiraKey").focus();
-    showAlert("Missing Issue Key", "Please enter a Jira Issue Key before generating.");
-    document.getElementById("jiraKey").classList.add("input-error");
-    return;
-  }
-
-  /* V2: Invalid format */
-  const jiraPattern = /^[A-Z]+-\d+$/;
-  if (!jiraPattern.test(key)) {
-    showAlert(
-      "Invalid Jira Key Format",
-      `"${key}" is not a valid format. Jira keys follow the pattern PROJECT-NUMBER using uppercase letters only — for example: QA-1, PROJ-42, or MYAPP-100. Check for typos, lowercase letters, or missing hyphens.`
-    );
-    document.getElementById("jiraKey").classList.add("input-error");
-    return;
-  }
-
-  setLoading(true);
-
-  /* Timeout: 30s */
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30000);
-
-  try {
-    const response = await fetch(
-      "https://n8n-public-epns.onrender.com/webhook/Jira-Test-Case-Generator",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-path-api": "Goutham@12"
-        },
-        body: JSON.stringify({ issueKey: key }),
-        signal: controller.signal
-      }
-    );
-
-    clearTimeout(timeout);
-
-    /* V3: HTTP error */
-    if (response.status === 404) {
-      showAlert(
-        "Jira Issue Not Found",
-        `"${key}" does not exist in Jira. Check that the project prefix is correct (e.g. QA, PROJ) and that the issue number exists. If the issue was recently deleted or you don't have access, contact your Jira admin.`
-      );
-      setLoading(false);
-      return;
-    }
-
-    if (response.status === 401 || response.status === 403) {
-      showAlert("Access Denied", "You don't have permission to access this Jira issue. Check your credentials.");
-      setLoading(false);
-      return;
-    }
-
-    if (response.status >= 500) {
-      showAlert("Server Error", `The server returned error ${response.status}. This is a server-side issue — please try again in a moment.`);
-      setLoading(false);
-      return;
-    }
-
-    if (!response.ok) {
-      showAlert("Request Failed", `The request failed with status ${response.status}. Please verify the Issue Key and try again.`);
-      setLoading(false);
-      return;
-    }
-
-    let data;
-    try {
-      data = await response.json();
-    } catch (e) {
-      showAlert("Parse Error", "The server returned an unexpected response. Please try again.");
-      setLoading(false);
-      return;
-    }
-
-    /* V4: Empty response */
-    if (!data) {
-      showAlert("Empty Response", "No data was returned. Please try again.");
-      setLoading(false);
-      return;
-    }
-
-    // Log raw response to console so we can inspect webhook output during debugging
-    console.log("[Jira Generator] Raw response:", JSON.stringify(data));
-
-    // n8n sometimes wraps the response in a single-element array — unwrap it
-    if (Array.isArray(data)) {
-      data = data[0] || {};
-    }
-
-    // Log unwrapped data
-    console.log("[Jira Generator] Unwrapped data:", JSON.stringify(data));
-
-    const hasPositive = Array.isArray(data.positive_tests) && data.positive_tests.length > 0;
-    const hasNegative = Array.isArray(data.negative_tests) && data.negative_tests.length > 0;
-
-    // STRICT GATE: if we don't have at least one valid test case array, something went wrong.
-    // We do NOT rely on specific error field names since the webhook may return anything.
-    if (!hasPositive && !hasNegative) {
-
-      // Try to extract a meaningful message from whatever the webhook returned
-      const _raw = typeof data === "object" ? JSON.stringify(data) : String(data);
-      console.log("[Jira Generator] No test cases found. Raw payload:", _raw);
-
-      const _notFound =
-        /not found|does not exist|invalid issue|no issue|cannot find|issue does not|doesn't exist/i.test(_raw);
-
-      const _noContent =
-        /no description|no content|empty|missing criteria|no acceptance/i.test(_raw);
-
-      if (_notFound) {
-        showAlert(
-          "Jira Issue Not Found",
-          `"${key}" does not exist in your Jira project. Check that:
-• The project prefix is correct (e.g. QA, PROJ)
-• The issue number exists
-• You have access to this issue`
-        );
-      } else if (_noContent) {
-        showAlert(
-          "Could Not Generate Test Cases",
-          `"${key}" was found but has no usable content. Add a description and acceptance criteria to the issue, then try again.`
-        );
-      } else {
-        // Fallback — still don't show old results, show what we got
-        showAlert(
-          "Jira Issue Not Found",
-          `"${key}" could not be processed. It may not exist, or it may not have enough detail to generate test cases. Check the key and try again.`
-        );
-      }
-
-      setLoading(false);
-      return;
-    }
-
-    // All good — we have real test cases
-    globalData = data;
-    setLoading(false);
-    setActionBtns(true);
-    renderTable(data);
-    showToast(`Generated ${(data.positive_tests||[]).length + (data.negative_tests||[]).length} test cases for ${key}`, "success");
-
-  } catch (e) {
-    clearTimeout(timeout);
-    setLoading(false);
-
-    if (e.name === "AbortError") {
-      showAlert("Request Timed Out", "The request took too long (30s). The server may be starting up — please wait a moment and try again.");
-    } else if (!navigator.onLine) {
-      showAlert("No Internet Connection", "You appear to be offline. Check your network connection and try again.");
-    } else {
-      showAlert("Connection Failed", "Unable to reach the server. Please check your network connection and try again.");
-    }
-  }
-}
-
-/* ── ENABLE/DISABLE ACTION BUTTONS ── */
-function setActionBtns(on) {
-  document.getElementById("btnExport").disabled = !on;
-  document.getElementById("btnCopy").disabled = !on;
-}
-
-/* ── RENDER TABLE ── */
-function renderTable(data) {
-  let html = "";
-
-  if (data.positive_tests?.length) {
-    html += `<div class="section">
-      <div class="section-header">
-        <span class="section-title positive">✓ Positive Tests</span>
-        <span class="badge positive">${data.positive_tests.length}</span>
-      </div>
-      ${tableHTML(data.positive_tests, "pos")}
-    </div>`;
-  }
-
-  if (data.negative_tests?.length) {
-    html += `<div class="section">
-      <div class="section-header">
-        <span class="section-title negative">✗ Negative Tests</span>
-        <span class="badge negative">${data.negative_tests.length}</span>
-      </div>
-      ${tableHTML(data.negative_tests, "neg")}
-    </div>`;
-  }
-
-  document.getElementById("result").innerHTML = html;
-}
-
-function tableHTML(tests, prefix) {
-  let rows = tests.map((tc, i) => {
-    const stepsId = `steps-${prefix}-${i}`;
-    const btnId   = `btn-${prefix}-${i}`;
-    const safeSteps = Array.isArray(tc.steps) ? tc.steps : [];
-    return `
-      <tr>
-        <td><span class="tc-id">${escapeHTML(tc.test_case_id || "—")}</span></td>
-        <td>${escapeHTML(tc.preconditions || "—")}</td>
-        <td>
-          <button class="steps-btn" id="${btnId}" onclick="toggleSteps('${stepsId}','${btnId}')">
-            View Steps <span class="chevron">▾</span>
-          </button>
-          <div class="steps-drawer" id="${stepsId}">
-            ${safeSteps.length
-              ? `<ul>${safeSteps.map(s => `<li>${escapeHTML(s)}</li>`).join("")}</ul>`
-              : `<p style="color:var(--text-muted);font-size:13px">No steps available.</p>`
-            }
-            <div class="expected-label">Expected Result</div>
-            <div class="expected-text">${escapeHTML(tc.expected_result || "—")}</div>
-          </div>
-        </td>
-      </tr>`;
-  }).join("");
-
-  return `<table>
-    <tr>
-      <th style="width:130px">ID</th>
-      <th>Preconditions</th>
-      <th>Steps & Expected Result</th>
-    </tr>
-    ${rows}
-  </table>`;
-}
-
-function toggleSteps(id, btnId) {
-  const el = document.getElementById(id);
-  const btn = document.getElementById(btnId);
-  const open = el.style.display === "block";
-  el.style.display = open ? "none" : "block";
-  btn.classList.toggle("open", !open);
-}
-
-/* ── ESCAPE HTML ── */
-function escapeHTML(str) {
-  return String(str)
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;");
-}
-
-/* ── COPY ── */
-function copyAll() {
-  if (!globalData) {
-    showToast("Nothing to copy — generate test cases first.", "warn");
-    return;
-  }
-  navigator.clipboard.writeText(JSON.stringify(globalData, null, 2))
-    .then(() => showToast("Test cases copied to clipboard!", "success"))
-    .catch(() => showToast("Copy failed. Try again or copy manually.", "error"));
-}
-
-/* ── EXPORT CSV ── */
-function exportCSV() {
-  if (!globalData) {
-    showToast("Nothing to export — generate test cases first.", "warn");
-    return;
-  }
-
-  let csv = "Type,TestCaseID,Preconditions,Steps,Expected Result\n";
-
-  function addRows(arr, type) {
-    arr.forEach(tc => {
-      const steps = Array.isArray(tc.steps) ? tc.steps.join(" | ") : "";
-      csv += `${type},"${escape(tc.test_case_id)}","${escape(tc.preconditions)}","${escape(steps)}","${escape(tc.expected_result)}"\n`;
-    });
-  }
-
-  function escape(v) {
-    return String(v || "").replace(/"/g, '""');
-  }
-
-  addRows(globalData.positive_tests || [], "Positive");
-  addRows(globalData.negative_tests || [], "Negative");
-
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement("a");
-  a.href     = url;
-  a.download = `testcases-${document.getElementById("jiraKey").value.trim() || "export"}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast("CSV exported successfully!", "success");
 }
 
 </script>
+
 </body>
 </html>
