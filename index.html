@@ -20,16 +20,17 @@ height:100vh;
 .container{
 background:#1e293b;
 padding:40px;
-border-radius:10px;
-width:600px;
+border-radius:12px;
+width:650px;
 }
 
 input{
 width:100%;
-padding:10px;
+padding:12px;
 margin-top:10px;
-border-radius:5px;
+border-radius:6px;
 border:none;
+font-size:16px;
 }
 
 button{
@@ -38,16 +39,26 @@ padding:12px;
 width:100%;
 background:#38bdf8;
 border:none;
-border-radius:5px;
+border-radius:6px;
 cursor:pointer;
 font-weight:bold;
+font-size:16px;
+}
+
+button:hover{
+background:#0ea5e9;
 }
 
 .card{
 background:#020617;
-padding:15px;
+padding:20px;
 margin-top:15px;
-border-radius:8px;
+border-radius:10px;
+}
+
+.loading{
+margin-top:10px;
+color:#38bdf8;
 }
 
 </style>
@@ -60,7 +71,7 @@ border-radius:8px;
 
 <h2>AI Jira Test Case Generator</h2>
 
-<input id="jiraKey" placeholder="Enter Jira Issue Key (Example: PROJ-123)">
+<input id="jiraKey" placeholder="Enter Jira Issue Key (Example: QA-1)">
 
 <button onclick="generate()">Generate Test Cases</button>
 
@@ -78,8 +89,8 @@ let key=document.getElementById("jiraKey").value
 let result=document.getElementById("result")
 let loading=document.getElementById("loading")
 
-loading.innerHTML="Generating test cases..."
 result.innerHTML=""
+loading.innerHTML="Generating test cases..."
 
 try{
 
@@ -104,6 +115,29 @@ data.positive_tests.forEach(tc=>{
 
 html+=`
 <div class="card">
+
+<h3>${tc.test_case_id}</h3>
+
+<b>Preconditions</b>
+<p>${tc.preconditions}</p>
+
+<b>Steps</b>
+<ul>
+${tc.steps.map(step=>`<li>${step}</li>`).join("")}
+</ul>
+
+<b>Expected Result</b>
+<p>${tc.expected_result}</p>
+
+</div>
+`
+
+})
+
+data.negative_tests.forEach(tc=>{
+
+html+=`
+<div class="card" style="border-left:4px solid red">
 
 <h3>${tc.test_case_id}</h3>
 
