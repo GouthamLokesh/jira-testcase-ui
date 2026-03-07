@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>QA Forge — Jira Test Case Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<style>
+/* ── Reset & Variables ───────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #080a0e;
+  --s1:       #0c0f16;
+  --s2:       #111520;
+  --s3:       #161b26;
+  --bdr:      #1a2030;
+  --bdr2:     #222b3a;
+  --txt:      #7a8599;
+  --txt2:     #b8c2d4;
+  --hi:       #dde4f0;
+  --acc:      #4f7eff;
+  --acc-d:    rgba(79,126,255,.11);
+  --acc-m:    rgba(79,126,255,.24);
+  --grn:      #22e492;
+  --grn-d:    rgba(34,228,146,.09);
+  --grn-m:    rgba(34,228,146,.2);
+  --red:      #ff4d5e;
+  --red-d:    rgba(255,77,94,.09);
+  --red-m:    rgba(255,77,94,.2);
+  --ylw:      #ffc44d;
+  --ylw-d:    rgba(255,196,77,.1);
+  --mono:     'IBM Plex Mono', monospace;
+  --sans:     'Syne', sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  font-family: var(--mono);
+  color: var(--txt);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Background layers ───────────────────────────── */
+.bg-grid {
+  pointer-events: none;
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(var(--bdr) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bdr) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+.bg-glow {
+  pointer-events: none;
+  position: fixed; inset: 0; z-index: 0;
+  background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(79,126,255,.07) 0%, transparent 70%);
+}
+
+/* ── Layout ──────────────────────────────────────── */
+.shell {
+  position: relative; z-index: 1;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 24px 100px;
+}
+
+/* ── Topbar ──────────────────────────────────────── */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--bdr);
+  margin-bottom: 52px;
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-icon {
+  width: 34px; height: 34px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--acc) 0%, #7c3aed 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.brand-name {
+  font-family: var(--sans); font-weight: 800; font-size: 16px;
+  color: var(--hi); letter-spacing: -.01em;
+}
+.brand-sub { font-size: 10px; color: var(--txt); letter-spacing: .05em; margin-top: 1px; }
+
+.conn-pill {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  padding: 6px 14px; border-radius: 3px;
+  border: 1px solid var(--bdr2); color: var(--txt);
+  transition: all .3s;
+}
+.conn-pill.ok  { color: var(--grn); background: var(--grn-d); border-color: var(--grn-m); }
+.conn-pill.err { color: var(--red); background: var(--red-d); border-color: var(--red-m); }
+.conn-pill.checking { color: var(--ylw); background: var(--ylw-d); border-color: rgba(255,196,77,.22); }
+
+.dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: currentColor; flex-shrink: 0;
+}
+.dot.pulse { animation: pulse 2s ease infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.6)} }
+
+/* ── Hero ────────────────────────────────────────── */
+.hero { margin-bottom: 48px; }
+.hero-tag {
+  font-size: 10px; letter-spacing: .28em; text-transform: uppercase;
+  color: var(--acc); margin-bottom: 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.hero-tag::before {
+  content: ''; display: inline-block;
+  width: 28px; height: 1px; background: var(--acc);
+}
+.hero-title {
+  font-family: var(--sans); font-weight: 800;
+  font-size: clamp(34px, 5.5vw, 58px);
+  line-height: 1.0; color: var(--hi);
+  letter-spacing: -.03em; margin-bottom: 16px;
+}
+.hero-title .c-grn { color: var(--grn); }
+.hero-title .c-acc { color: var(--acc); }
+.hero-desc {
+  font-size: 12px; color: var(--txt); line-height: 1.85;
+  max-width: 500px; margin-bottom: 24px;
+}
+
+/* pipeline strip */
+.pipeline {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: 4px; font-size: 10px;
+}
+.pn {
+  padding: 4px 11px; border: 1px solid var(--bdr2);
+  background: var(--s2); border-radius: 3px;
+  color: var(--txt2); white-space: nowrap;
+}
+.pn.hi { border-color: var(--acc-m); color: var(--acc); background: var(--acc-d); }
+.pa { color: var(--bdr2); padding: 0 2px; }
+
+/* ── Cards ───────────────────────────────────────── */
+.card {
+  background: var(--s1); border: 1px solid var(--bdr);
+  padding: 28px 30px; margin-bottom: 18px;
+  position: relative; overflow: hidden;
+  animation: slideUp .4s ease both;
+}
+.card::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, var(--acc), #a855f7 50%, transparent);
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card-hd {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 22px;
+}
+.card-num {
+  width: 22px; height: 22px; border-radius: 3px;
+  background: var(--acc-d); border: 1px solid var(--acc-m);
+  color: var(--acc); font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.card-title {
+  font-family: var(--sans); font-size: 13px; font-weight: 700;
+  color: var(--txt2); letter-spacing: .02em;
+}
+.card-hint { font-size: 10px; color: var(--txt); margin-left: auto; }
+
+/* ── Notice ──────────────────────────────────────── */
+.notice {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: var(--acc-d); border: 1px solid var(--acc-m);
+  padding: 12px 16px; border-radius: 3px;
+  font-size: 11px; color: var(--acc); line-height: 1.75;
+  margin-bottom: 20px;
+}
+.notice-icon { flex-shrink: 0; margin-top: 1px; }
+
+/* ── Form fields ─────────────────────────────────── */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field-label {
+  font-size: 9px; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--txt);
+}
+.field-label span { color: var(--red); margin-left: 2px; }
+.field-wrap { position: relative; display: flex; align-items: center; }
+.field-icon {
+  position: absolute; left: 12px; font-size: 12px;
+  opacity: .45; pointer-events: none;
+}
+.field-wrap input {
+  width: 100%; background: var(--bg); border: 1px solid var(--bdr2);
+  color: var(--hi); font-family: var(--mono); font-size: 12px;
+  padding: 11px 12px 11px 34px; outline: none; border-radius: 3px;
+  transition: border-color .2s, box-shadow .2s;
+}
+.field-wrap input::placeholder { color: var(--bdr2); }
+.field-wrap input:focus {
+  border-color: var(--acc);
+  box-shadow: 0 0 0 3px var(--acc-d);
+}
+.eye-btn {
+  position: absolute; right: 10px; background: none; border: none;
+  cursor: pointer; color: var(--txt); font-size: 12px;
+  padding: 4px; transition: color .2s;
+}
+.eye-btn:hover { color: var(--hi); }
+
+.divider { height: 1px; background: var(--bdr); margin: 22px 0; }
+
+/* ── Buttons ─────────────────────────────────────── */
+.btn-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+
+.btn {
+  font-family: var(--sans); font-weight: 700; font-size: 13px;
+  padding: 11px 26px; border-radius: 3px; cursor: pointer;
+  border: none; transition: all .2s; letter-spacing: .02em;
+  display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--acc), #7c3aed);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) {
+  opacity: .88; transform: translateY(-1px);
+  box-shadow: 0 8px 28px rgba(79,126,255,.3);
+}
+.btn-primary:disabled { opacity: .35; cursor: not-allowed; }
+
+.btn-secondary {
+  background: var(--s2); border: 1px solid var(--bdr2); color: var(--txt2);
+}
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--acc); color: var(--acc); background: var(--acc-d);
+}
+.btn-secondary:disabled { opacity: .35; cursor: not-allowed; }
+
+.spin { display: inline-block; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Progress card ───────────────────────────────── */
+.progress-card {
+  background: var(--s1); border: 1px solid var(--bdr);
+  padding: 22px 28px; margin-bottom: 18px;
+  animation: slideUp .3s ease;
+}
+.prog-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px;
+}
+.prog-label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--txt2); }
+.prog-pct   { font-size: 11px; color: var(--acc); font-weight: 700; }
+.prog-bar {
+  height: 2px; background: var(--bdr); border-radius: 2px;
+  overflow: hidden; margin-bottom: 20px;
+}
+.prog-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--acc), var(--grn));
+  border-radius: 2px;
+  transition: width .6s cubic-bezier(.4,0,.2,1);
+  box-shadow: 0 0 12px rgba(79,126,255,.5);
+  width: 0%;
+}
+.log-list { display: flex; flex-direction: column; gap: 6px; }
+.log-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 11px; line-height: 1.5;
+}
+.log-item.wait { color: var(--bdr2); }
+.log-item.run  { color: var(--ylw); }
+.log-item.done { color: var(--grn); }
+.log-item.fail { color: var(--red); }
+.log-ic { width: 16px; flex-shrink: 0; text-align: center; padding-top: 1px; }
+
+/* ── Error banner ────────────────────────────────── */
+.error-banner {
+  background: var(--red-d); border: 1px solid var(--red-m);
+  padding: 14px 20px; margin-bottom: 18px; border-radius: 3px;
+  font-size: 12px; color: var(--red);
+  display: flex; gap: 12px; align-items: flex-start;
+  animation: slideUp .3s ease;
+}
+.error-banner-icon { flex-shrink: 0; font-size: 15px; }
+.error-hint { font-size: 10px; opacity: .75; margin-top: 5px; line-height: 1.6; }
+
+/* ── Results ─────────────────────────────────────── */
+#results-wrap { animation: slideUp .4s ease; }
+
+.results-top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 28px; flex-wrap: wrap; gap: 14px;
+}
+.results-title {
+  font-family: var(--sans); font-size: 22px; font-weight: 800;
+  color: var(--hi); letter-spacing: -.02em;
+  display: flex; align-items: center; gap: 12px;
+}
+.issue-pill {
+  font-family: var(--mono); font-size: 11px;
+  background: var(--acc-d); border: 1px solid var(--acc-m);
+  color: var(--acc); padding: 3px 11px; border-radius: 3px;
+}
+.result-badges { display: flex; gap: 8px; }
+.badge {
+  font-size: 11px; padding: 4px 13px; border-radius: 3px;
+  letter-spacing: .04em;
+}
+.badge-grn { background: var(--grn-d); border: 1px solid var(--grn-m); color: var(--grn); }
+.badge-red { background: var(--red-d); border: 1px solid var(--red-m); color: var(--red); }
+
+.results-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+.col-title {
+  font-family: var(--sans); font-weight: 700; font-size: 11px;
+  letter-spacing: .15em; text-transform: uppercase;
+  margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+}
+.col-title.grn { color: var(--grn); }
+.col-title.red { color: var(--red); }
+.col-count {
+  font-size: 10px; padding: 2px 8px; border-radius: 10px;
+}
+.col-title.grn .col-count { background: var(--grn-m); }
+.col-title.red .col-count { background: var(--red-m); }
+.col-tests { display: flex; flex-direction: column; gap: 10px; }
+
+/* ── Test card ───────────────────────────────────── */
+.tc {
+  background: var(--s1); border: 1px solid var(--bdr);
+  border-radius: 3px; overflow: hidden;
+  transition: border-color .2s;
+}
+.tc:hover { border-color: var(--bdr2); }
+.tc.grn:hover { border-color: var(--grn-m); }
+.tc.red:hover { border-color: var(--red-m); }
+
+.tc-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; cursor: pointer;
+  border-bottom: 1px solid transparent;
+  transition: background .15s, border-color .15s;
+  user-select: none;
+}
+.tc-head:hover { background: var(--s2); }
+.tc.open .tc-head { border-color: var(--bdr); }
+
+.tc-id { font-size: 11px; font-weight: 700; letter-spacing: .08em; }
+.tc.grn .tc-id { color: var(--grn); }
+.tc.red .tc-id { color: var(--red); }
+.tc-toggle { font-size: 9px; color: var(--txt); }
+
+.tc-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+
+.tc-row-label {
+  font-size: 9px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--txt); margin-bottom: 4px;
+}
+.tc-row-val { font-size: 11px; color: var(--txt2); line-height: 1.7; }
+
+.tc-steps { display: flex; flex-direction: column; gap: 3px; }
+.tc-step {
+  display: flex; gap: 8px; font-size: 11px;
+  color: var(--txt2); line-height: 1.6;
+}
+.tc-step-n { color: var(--txt); min-width: 16px; font-size: 10px; padding-top: 1px; }
+
+.tc-result {
+  font-size: 11px; padding: 8px 12px;
+  border-radius: 3px; line-height: 1.6;
+}
+.tc.grn .tc-result { background: var(--grn-d); border-left: 2px solid var(--grn); color: var(--grn); }
+.tc.red .tc-result { background: var(--red-d); border-left: 2px solid var(--red); color: var(--red); }
+
+/* ── Footer actions ──────────────────────────────── */
+.footer-acts { margin-top: 28px; display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* ── Hidden util ─────────────────────────────────── */
+.hidden { display: none !important; }
+
+/* ── Responsive ──────────────────────────────────── */
+@media (max-width: 720px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .results-cols { grid-template-columns: 1fr; }
+  .topbar { flex-direction: column; align-items: flex-start; gap: 12px; }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<div class="shell">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-icon">⚡</div>
+      <div>
+        <div class="brand-name">QA Forge</div>
+        <div class="brand-sub">Jira × n8n × Groq AI</div>
+      </div>
+    </div>
+    <div class="conn-pill" id="conn-pill">
+      <span class="dot" id="conn-dot"></span>
+      <span id="conn-label">Not tested</span>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-tag">Automated Test Case Generator</div>
+    <h1 class="hero-title">
+      From <span class="c-acc">Jira</span> to<br>
+      <span class="c-grn">Test Cases</span> instantly
+    </h1>
+    <p class="hero-desc">
+      Enter your Jira issue key and authentication details. The n8n workflow
+      fetches the issue, sends it to Groq AI, and returns fully structured
+      positive &amp; negative test cases — ready to execute.
+    </p>
+    <div class="pipeline">
+      <span class="pn hi">Webhook</span><span class="pa">→</span>
+      <span class="pn">Get Jira Issue</span><span class="pa">→</span>
+      <span class="pn">If (validate)</span><span class="pa">→</span>
+      <span class="pn hi">AI Agent (Groq)</span><span class="pa">→</span>
+      <span class="pn">Output Parser</span><span class="pa">→</span>
+      <span class="pn">Edit Fields</span><span class="pa">→</span>
+      <span class="pn hi">Response ✓</span>
+    </div>
+  </div>
+
+  <!-- CONFIG CARD -->
+  <div class="card" id="config-card">
+
+    <!-- Section 01: Auth -->
+    <div class="card-hd">
+      <div class="card-num">01</div>
+      <div class="card-title">Authentication</div>
+      <span class="card-hint">n8n Header Auth</span>
+    </div>
+
+    <div class="notice">
+      <span class="notice-icon">ℹ</span>
+      <span>
+        Your workflow uses <strong>Header Auth</strong>. Enter the header name &amp; value
+        from your n8n <em>Header Auth account</em> credential.
+        Common pattern: <code>Authorization</code> → <code>Bearer &lt;token&gt;</code>
+      </span>
+    </div>
+
+    <div class="form-grid">
+      <div class="field">
+        <div class="field-label">Header Name <span>*</span></div>
+        <div class="field-wrap">
+          <span class="field-icon">🔑</span>
+          <input type="text" id="hdr-name" value="Authorization" placeholder="Authorization" />
+        </div>
+      </div>
+      <div class="field" style="grid-column: 2 / 4;">
+        <div class="field-label">Header Value / Token <span>*</span></div>
+        <div class="field-wrap">
+          <span class="field-icon">🔒</span>
+          <input type="password" id="hdr-val" placeholder="Bearer eyJ… or your secret value" />
+          <button class="eye-btn" id="eye-btn" title="Toggle visibility">👁</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Section 02: Generate -->
+    <div class="card-hd" style="margin-bottom:0">
+      <div class="card-num">02</div>
+      <div class="card-title">Generate Test Cases</div>
+    </div>
+    <div style="height:18px"></div>
+
+    <div class="field" style="max-width:360px">
+      <div class="field-label">Jira Issue Key <span>*</span></div>
+      <div class="field-wrap">
+        <span class="field-icon">🎫</span>
+        <input type="text" id="issue-key" placeholder="e.g. PROJ-123" autocomplete="off" />
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-generate" disabled>
+        <span>⚡</span> Generate Test Cases
+      </button>
+      <button class="btn btn-secondary" id="btn-test">
+        <span>📡</span> Test Connection
+      </button>
+    </div>
+  </div>
+
+  <!-- PROGRESS CARD -->
+  <div class="progress-card hidden" id="progress-card">
+    <div class="prog-top">
+      <span class="prog-label">n8n Pipeline Executing</span>
+      <span class="prog-pct" id="prog-pct">0%</span>
+    </div>
+    <div class="prog-bar">
+      <div class="prog-fill" id="prog-fill"></div>
+    </div>
+    <div class="log-list" id="log-list"></div>
+  </div>
+
+  <!-- ERROR BANNER -->
+  <div class="error-banner hidden" id="error-banner">
+    <span class="error-banner-icon">✕</span>
+    <div>
+      <span id="error-msg">An error occurred.</span>
+      <div class="error-hint">
+        Check: workflow is Active in n8n · header credentials match · Jira key exists · Groq API key is valid
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="hidden" id="results-wrap">
+    <div class="results-top">
+      <div class="results-title">
+        Test Cases
+        <span class="issue-pill" id="res-issue-key"></span>
+      </div>
+      <div class="result-badges">
+        <span class="badge badge-grn" id="res-pos-badge"></span>
+        <span class="badge badge-red" id="res-neg-badge"></span>
+      </div>
+    </div>
+
+    <div class="results-cols">
+      <div>
+        <div class="col-title grn">
+          ✓ Positive Tests
+          <span class="col-count" id="pos-count-badge"></span>
+        </div>
+        <div class="col-tests" id="pos-tests"></div>
+      </div>
+      <div>
+        <div class="col-title red">
+          ✕ Negative Tests
+          <span class="col-count" id="neg-count-badge"></span>
+        </div>
+        <div class="col-tests" id="neg-tests"></div>
+      </div>
+    </div>
+
+    <div class="footer-acts">
+      <button class="btn btn-primary" id="btn-new">
+        <span>+</span> New Issue
+      </button>
+      <button class="btn btn-secondary" id="btn-export">
+        ⎘ Export JSON
+      </button>
+    </div>
+  </div>
+
+</div><!-- /shell -->
+
+<script>
+/* ─── Config ─────────────────────────────────────── */
+const WEBHOOK = 'https://n8n-public-epns.onrender.com/webhook/Jira-Test-Case-Generator';
+
+const PIPELINE_STEPS = [
+  { icon: '⬆', label: 'Sending POST to n8n webhook…' },
+  { icon: '🔗', label: 'Jira: fetching issue data…' },
+  { icon: '✓',  label: 'If node: validating issue exists…' },
+  { icon: '🤖', label: 'AI Agent (Groq): generating test cases…' },
+  { icon: '⚙',  label: 'Structured Output Parser: validating JSON…' },
+  { icon: '📋', label: 'Edit Fields: mapping response…' },
+  { icon: '⬇', label: 'Receiving workflow response…' },
+];
+
+/* ─── DOM refs ───────────────────────────────────── */
+const $ = id => document.getElementById(id);
+const hdrName      = $('hdr-name');
+const hdrVal       = $('hdr-val');
+const eyeBtn       = $('eye-btn');
+const issueKeyEl   = $('issue-key');
+const btnGenerate  = $('btn-generate');
+const btnTest      = $('btn-test');
+const connPill     = $('conn-pill');
+const connDot      = $('conn-dot');
+const connLabel    = $('conn-label');
+const progressCard = $('progress-card');
+const progFill     = $('prog-fill');
+const progPct      = $('prog-pct');
+const logList      = $('log-list');
+const errorBanner  = $('error-banner');
+const errorMsg     = $('error-msg');
+const resultsWrap  = $('results-wrap');
+const configCard   = $('config-card');
+
+/* ─── State ──────────────────────────────────────── */
+let currentResults = null;
+
+/* ─── Helpers ────────────────────────────────────── */
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const hide  = el => el.classList.add('hidden');
+const show  = el => el.classList.remove('hidden');
+
+function buildHeaders() {
+  const headers = { 'Content-Type': 'application/json' };
+  const name = hdrName.value.trim() || 'Authorization';
+  const val  = hdrVal.value.trim();
+  if (val) headers[name] = val;
+  return headers;
+}
+
+/* ─── Connection status ──────────────────────────── */
+function setConnStatus(status) {
+  connPill.className = 'conn-pill ' + status;
+  connDot.className  = 'dot' + (status === 'ok' ? ' pulse' : '');
+  connLabel.textContent = {
+    idle: 'Not tested',
+    checking: 'Testing…',
+    ok: 'Connected',
+    err: 'Unreachable'
+  }[status] || 'Not tested';
+}
+
+/* ─── Progress log ───────────────────────────────── */
+function initLog() {
+  logList.innerHTML = '';
+  PIPELINE_STEPS.forEach((s, i) => {
+    const div = document.createElement('div');
+    div.className = 'log-item wait';
+    div.id = 'log-' + i;
+    div.innerHTML = `<span class="log-ic">·</span><span>${s.icon} ${s.label}</span>`;
+    logList.appendChild(div);
+  });
+}
+
+function setLogStep(step) {
+  const pct = Math.min(100, Math.round(((step + 1) / PIPELINE_STEPS.length) * 100));
+  progFill.style.width = pct + '%';
+  progPct.textContent  = pct + '%';
+
+  PIPELINE_STEPS.forEach((_, i) => {
+    const el  = $('log-' + i);
+    const ico = el.querySelector('.log-ic');
+    if (i < step)       { el.className = 'log-item done'; ico.textContent = '✓'; }
+    else if (i === step){ el.className = 'log-item run';  ico.innerHTML = '<span class="spin">◌</span>'; }
+    else                { el.className = 'log-item wait'; ico.textContent = '·'; }
+  });
+}
+
+/* ─── Render test cards ──────────────────────────── */
+function renderTests(tests, container, type) {
+  container.innerHTML = '';
+  tests.forEach((tc, idx) => {
+    const cls   = type === 'pos' ? 'grn' : 'red';
+    const isOpen = idx < 2;
+    const div   = document.createElement('div');
+    div.className = `tc ${cls} ${isOpen ? 'open' : ''}`;
+    div.style.animationDelay = (idx * 55) + 'ms';
+    div.style.animation = 'slideUp .35s ease both';
+
+    const stepsHtml = (tc.steps || []).map((s, i) =>
+      `<div class="tc-step"><span class="tc-step-n">${i+1}.</span><span>${esc(s)}</span></div>`
+    ).join('');
+
+    div.innerHTML = `
+      <div class="tc-head">
+        <span class="tc-id">${esc(tc.test_case_id || '')}</span>
+        <span class="tc-toggle">${isOpen ? '▲' : '▼'}</span>
+      </div>
+      <div class="tc-body" style="${isOpen ? '' : 'display:none'}">
+        ${tc.preconditions ? `
+          <div>
+            <div class="tc-row-label">Preconditions</div>
+            <div class="tc-row-val">${esc(tc.preconditions)}</div>
+          </div>` : ''}
+        ${stepsHtml ? `
+          <div>
+            <div class="tc-row-label">Steps</div>
+            <div class="tc-steps">${stepsHtml}</div>
+          </div>` : ''}
+        ${tc.expected_result ? `
+          <div>
+            <div class="tc-row-label">Expected Result</div>
+            <div class="tc-result">${esc(tc.expected_result)}</div>
+          </div>` : ''}
+      </div>`;
+
+    div.querySelector('.tc-head').addEventListener('click', () => {
+      const body   = div.querySelector('.tc-body');
+      const toggle = div.querySelector('.tc-toggle');
+      const isNowOpen = body.style.display !== 'none';
+      body.style.display   = isNowOpen ? 'none' : 'flex';
+      toggle.textContent   = isNowOpen ? '▼' : '▲';
+      div.classList.toggle('open', !isNowOpen);
+    });
+
+    container.appendChild(div);
+  });
+}
+
+function esc(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/* ─── Show error ─────────────────────────────────── */
+function showError(msg) {
+  errorMsg.textContent = msg;
+  show(errorBanner);
+}
+
+/* ─── Test Connection ────────────────────────────── */
+btnTest.addEventListener('click', async () => {
+  setConnStatus('checking');
+  hide(errorBanner);
+  btnTest.disabled = true;
+  try {
+    const res = await fetch(WEBHOOK, {
+      method: 'POST',
+      headers: buildHeaders(),
+      body: JSON.stringify({ issueKey: '__ping__' }),
+    });
+    setConnStatus(res.status < 500 ? 'ok' : 'err');
+  } catch {
+    setConnStatus('err');
+  } finally {
+    btnTest.disabled = false;
+  }
+});
+
+/* ─── Generate ───────────────────────────────────── */
+async function generate() {
+  const key = issueKeyEl.value.trim();
+  if (!key) return;
+
+  hide(errorBanner);
+  hide(resultsWrap);
+  show(progressCard);
+  btnGenerate.disabled = true;
+  btnTest.disabled     = true;
+  initLog();
+  progFill.style.width = '0%';
+  progPct.textContent  = '0%';
+
+  try {
+    setLogStep(0);
+    await sleep(350);
+
+    const res = await fetch(WEBHOOK, {
+      method: 'POST',
+      headers: buildHeaders(),
+      body: JSON.stringify({ issueKey: key }),
+    });
+
+    setLogStep(1); await sleep(300);
+
+    if (res.status === 401 || res.status === 403) throw new Error('Authentication failed — check your header name & value.');
+    if (res.status === 404) throw new Error('Jira issue not found — verify the issue key exists.');
+    if (!res.ok) throw new Error(`Webhook returned HTTP ${res.status}.`);
+
+    setLogStep(2); await sleep(350);
+    setLogStep(3); await sleep(800);
+    setLogStep(4); await sleep(500);
+    setLogStep(5); await sleep(350);
+
+    const data = await res.json();
+
+    setLogStep(6); await sleep(300);
+
+    const pos = data.positive_tests || data.output?.positive_tests || [];
+    const neg = data.negative_tests || data.output?.negative_tests || [];
+
+    if (!pos.length && !neg.length) throw new Error('No test cases returned — check AI Agent output in n8n.');
+
+    currentResults = { issueKey: key, positive_tests: pos, negative_tests: neg };
+
+    // Render results
+    $('res-issue-key').textContent  = key;
+    $('res-pos-badge').textContent  = '✓ ' + pos.length + ' Positive';
+    $('res-neg-badge').textContent  = '✕ ' + neg.length + ' Negative';
+    $('pos-count-badge').textContent = pos.length;
+    $('neg-count-badge').textContent = neg.length;
+
+    renderTests(pos, $('pos-tests'), 'pos');
+    renderTests(neg, $('neg-tests'), 'neg');
+
+    await sleep(300);
+    hide(progressCard);
+    show(resultsWrap);
+    hide(configCard);
+
+  } catch (e) {
+    hide(progressCard);
+    showError(e.message || 'Unknown error occurred.');
+  } finally {
+    btnGenerate.disabled = !issueKeyEl.value.trim();
+    btnTest.disabled     = false;
+  }
+}
+
+btnGenerate.addEventListener('click', generate);
+
+issueKeyEl.addEventListener('input', () => {
+  issueKeyEl.value     = issueKeyEl.value.toUpperCase();
+  btnGenerate.disabled = !issueKeyEl.value.trim();
+});
+
+issueKeyEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !btnGenerate.disabled) generate();
+});
+
+/* ─── Eye toggle ─────────────────────────────────── */
+eyeBtn.addEventListener('click', () => {
+  const isText = hdrVal.type === 'text';
+  hdrVal.type      = isText ? 'password' : 'text';
+  eyeBtn.textContent = isText ? '👁' : '🙈';
+});
+
+/* ─── New issue ──────────────────────────────────── */
+$('btn-new').addEventListener('click', () => {
+  hide(resultsWrap);
+  hide(errorBanner);
+  show(configCard);
+  issueKeyEl.value     = '';
+  btnGenerate.disabled = true;
+  currentResults       = null;
+  progFill.style.width = '0%';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+/* ─── Export JSON ────────────────────────────────── */
+$('btn-export').addEventListener('click', () => {
+  if (!currentResults) return;
+  navigator.clipboard.writeText(JSON.stringify(currentResults, null, 2))
+    .then(() => {
+      const btn = $('btn-export');
+      btn.textContent = '✓ Copied to clipboard!';
+      setTimeout(() => btn.textContent = '⎘ Export JSON', 2200);
+    });
+});
+</script>
+</body>
+</html>
